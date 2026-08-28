@@ -9,22 +9,24 @@ import java.util.Random;
 public class Assignment1_studentID_yourPairID extends JPanel implements Runnable {
 
     // ===== animation timing =====
-    // 0.0 -> 4.6   Scene 1: Night stargazing, zoom into eye, eyes close
-    // 4.6 -> 9.6   Scene 2 (Memory 1): Football match & bicycle kick
-    // 9.6 -> 15.6  Scene 3 (Memory 2): Epic childhood toy sword fight
-    // 15.6 -> 18.0 Scene 1: Back to present, wake up, zoom out
+    // 0.0 -> 4.6    Scene 1: Night stargazing, zoom into eye, eyes close
+    // 4.6 -> 9.6    Scene 2 (Memory 1): Football match & bicycle kick
+    // 9.6 -> 15.6   Scene 3 (Memory 2): Epic childhood toy sword fight
+    // 15.6 -> 19.6  Scene 4 (Memory 3): Playing in a cheerful stream
+    // 19.6 -> 22.0  Scene 1: Back to present, wake up, zoom out
     volatile double totalTime = 0;
-    static final double CYCLE = 18.0;     // seconds, whole animation loops after this
+    static final double CYCLE = 22.0;     // seconds, whole animation loops after this
     static final double SHOOT_START = 1.2;
     static final double SHOOT_DURATION = 1.4;
     static final double EYES_CLOSE_START = 3.2;
     static final double EYES_CLOSE_END = 3.9;
     static final double WARP_INTO_MEMORY = 4.6;
     static final double WARP_INTO_SWORD = 9.6;
-    static final double WARP_BACK = 15.6;
-    static final double EYES_REOPEN_START = 16.8;  // wakes up again so the loop is seamless
-    static final double EYES_REOPEN_END = 17.4;
-    static final double WARP_RAMP = 0.45; // how long the white flash takes each side
+    static final double WARP_INTO_WATER = 15.6;
+    static final double WARP_BACK = 19.6;
+    static final double EYES_REOPEN_START = 20.8;  // wakes up again so the loop is seamless
+    static final double EYES_REOPEN_END = 21.4;
+    static final double WARP_RAMP = 0.45; // how long the scene transition takes each side
     static final int FRAME_MS = 16;       // ~60 fps
 
     // ===== Seeded background parameters (from test.java) =====
@@ -462,10 +464,10 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
             zoom = 1.0 + 1.25 * p;
         } else if (t >= 4.3 && t < WARP_INTO_MEMORY) {
             zoom = 2.25;
-        } else if (t >= WARP_BACK && t < 16.2) {
+        } else if (t >= WARP_BACK && t < 20.2) {
             zoom = 2.25;
-        } else if (t >= 16.2 && t < 17.6) {
-            double p = smoothStep((t - 16.2) / 1.4);
+        } else if (t >= 20.2 && t < 21.6) {
+            double p = smoothStep((t - 20.2) / 1.4);
             zoom = 2.25 - 1.25 * p;
         }
 
@@ -1544,7 +1546,160 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     }
 
     // ==================================================================
-    // 7. MEMORY SCENE 2: EPIC CHILDHOOD TOY SWORD FIGHT (ANIME BATTLE)
+    // 7. MEMORY SCENE 3: CHILDHOOD FRIENDS PLAYING IN A STREAM
+    // ==================================================================
+
+    private void drawStreamScene(Graphics2D g2, double st) {
+        // Put the waterline around the friends' waists instead of below their feet.
+        final int waterY = 365;
+
+        // Bright outdoor memory backdrop: trees, a bank, and a flowing stream.
+        GradientPaint sky = new GradientPaint(0, 0, new Color(115, 205, 245),
+                                              0, 430, new Color(225, 248, 255));
+        g2.setPaint(sky);
+        g2.fillRect(0, 0, 600, 600);
+
+        g2.setColor(new Color(90, 175, 105));
+        g2.fillOval(-80, 205, 330, 250);
+        g2.fillOval(360, 185, 350, 270);
+        g2.setColor(new Color(55, 145, 78));
+        g2.fillOval(30, 280, 180, 145);
+        g2.fillOval(420, 265, 180, 160);
+
+        // Tree trunks frame the stream and establish a clear outdoor setting.
+        g2.setColor(new Color(105, 70, 42));
+        g2.fillRect(35, 130, 34, 300);
+        g2.fillRect(525, 115, 38, 315);
+        g2.setColor(new Color(45, 125, 68));
+        g2.fillOval(0, 75, 125, 110);
+        g2.fillOval(475, 55, 145, 120);
+
+        // Near bank, stream body, and soft current lines.
+        g2.setColor(new Color(185, 145, 78));
+        g2.fillRect(0, waterY - 14, 600, 30);
+        g2.setColor(new Color(45, 170, 215));
+        g2.fillRect(0, waterY + 2, 600, 230);
+        g2.setColor(new Color(95, 215, 238, 180));
+        for (int i = 0; i < 9; i++) {
+            double wave = Math.sin(st * 2.5 + i * 0.8) * 8;
+            bezierCurve(g2, 20 + i * 72, waterY + 45 + i % 3 * 45,
+                    45 + i * 72, waterY + 32 + wave + i % 3 * 45,
+                    75 + i * 72, waterY + 58 - wave + i % 3 * 45,
+                    105 + i * 72, waterY + 43 + i % 3 * 45, 2);
+        }
+
+        // Draw the friends already standing in the stream first. The water surface
+        // is drawn over their lower bodies so they read as being waist-deep.
+        drawStreamFriend(g2, 105, waterY, 0, new Color(245, 100, 85), st);
+        drawStreamFriend(g2, 235, waterY, 1, new Color(255, 205, 65), st);
+        drawStreamFriend(g2, 365, waterY, 2, new Color(105, 115, 240), st);
+
+        drawStreamSurface(g2, waterY, st);
+
+        // The fourth friend is in front of the water while jumping into it.
+        drawStreamFriend(g2, 505, waterY, 3, new Color(235, 105, 175), st);
+    }
+
+    private void drawStreamSurface(Graphics2D g2, int waterY, double st) {
+        // Translucent foreground water hides the submerged legs and creates a
+        // clear waterline across the friends' waists.
+        g2.setColor(new Color(35, 155, 205, 225));
+        g2.fillRect(0, waterY - 4, 600, 230);
+
+        g2.setColor(new Color(185, 245, 255, 210));
+        for (int i = 0; i < 12; i++) {
+            double x = 18 + i * 54;
+            double y = waterY + 4 + (i % 3) * 10;
+            double wave = Math.sin(st * 3.0 + i) * 5;
+            bezierCurve(g2, x - 16, y, x - 7, y - 3 + wave,
+                    x + 7, y + 3 - wave, x + 16, y, 2);
+        }
+
+        // Ripples around the three friends who are standing in the stream.
+        for (int x : new int[]{105, 235, 365}) {
+            bezierCurve(g2, x - 28, waterY + 10, x - 14, waterY + 4,
+                    x + 14, waterY + 4, x + 28, waterY + 10, 2);
+        }
+    }
+
+    private void drawStreamFriend(Graphics2D g2, int x, int waterY, int action,
+                                  Color shirtColor, double st) {
+        final Color ink = new Color(35, 45, 55);
+        double actionTime = st + action * 0.55;
+        double bob = Math.sin(actionTime * 4.0) * 3.0;
+        boolean jumping = action == 3;
+        double jump = jumping ? Math.max(0, Math.sin(st * 2.2 + 0.4)) * 70 : 0;
+        int hipY = (int) (waterY - 5 - bob - jump);
+        int shoulderY = hipY - 62;
+        int headY = shoulderY - 24;
+
+        g2.setColor(new Color(35, 125, 175, 120));
+        if (action == 0) {
+            // Water thrown toward the next friend.
+            for (int i = 0; i < 7; i++) {
+                double p = i / 6.0;
+                int dx = (int) (18 + p * 72);
+                int dy = (int) (shoulderY + 12 - 42 * Math.sin(p * Math.PI) + bob);
+                fillMidpointCircle(g2, x + dx, dy, 2 + (i % 2), new Color(225, 250, 255, 220));
+            }
+        }
+
+        g2.setColor(ink);
+        // Body and legs remain in the same simple stickman style as the memories.
+        bresenhamLine(g2, x, shoulderY, x, hipY, 2);
+        int leftFootY = (int) (waterY + 2 - (jumping ? jump * 0.85 : 0));
+        int rightFootY = (int) (waterY + 2 - (jumping ? jump * 0.75 : 0));
+        int leftFootX = x - 18 - (jumping ? 8 : 0);
+        int rightFootX = x + 20 + (jumping ? 7 : 0);
+        bresenhamLine(g2, x, hipY, leftFootX, leftFootY, 2);
+        bresenhamLine(g2, x, hipY, rightFootX, rightFootY, 2);
+        fillMidpointCircle(g2, leftFootX, leftFootY, 4, ink);
+        fillMidpointCircle(g2, rightFootX, rightFootY, 4, ink);
+
+        int leftHandY = shoulderY + 12;
+        int rightHandY = shoulderY + 12;
+        if (action == 0) { // throwing water
+            rightHandY = shoulderY - 8;
+        } else if (action == 2) { // celebrating with both hands raised
+            leftHandY = shoulderY - 38;
+            rightHandY = shoulderY - 45;
+        } else if (action == 3) { // arms up during the jump
+            leftHandY = shoulderY - 28;
+            rightHandY = shoulderY - 35;
+        }
+        bresenhamLine(g2, x, shoulderY + 5, x - 28, leftHandY, 2);
+        bresenhamLine(g2, x, shoulderY + 5, x + 28, rightHandY, 2);
+        fillMidpointCircle(g2, x - 28, leftHandY, 4, ink);
+        fillMidpointCircle(g2, x + 28, rightHandY, 4, ink);
+
+        // Shirt and head are drawn over the stick lines for a readable silhouette.
+        g2.setColor(shirtColor);
+        g2.fillOval(x - 13, shoulderY - 2, 26, 38);
+        g2.setColor(new Color(255, 224, 185));
+        g2.fillOval(x - 18, headY - 18, 36, 36);
+        g2.setColor(ink);
+        midpointCircle(g2, x, headY, 18);
+
+        // Smiling face: eyes and a curved laughing mouth.
+        g2.fillOval(x - 8, headY - 4, 3, 4);
+        g2.fillOval(x + 5, headY - 4, 3, 4);
+        bezierCurve(g2, x - 8, headY + 7, x - 3, headY + 14,
+                    x + 4, headY + 14, x + 9, headY + 7, 2);
+
+        if (jumping) {
+            // The jumper lands into the stream at the bottom of the looped motion.
+            double splash = Math.max(0, Math.sin(st * 2.2 + Math.PI / 2));
+            for (int i = 0; i < 10; i++) {
+                double angle = Math.PI * (0.1 + 0.8 * i / 9.0);
+                int sx = x + (int) (Math.cos(angle) * (18 + splash * 24));
+                int sy = waterY + 5 - (int) (Math.sin(angle) * (18 + splash * 24));
+                fillMidpointCircle(g2, sx, sy, 2 + i % 2, new Color(235, 252, 255, 220));
+            }
+        }
+    }
+
+    // ==================================================================
+    // 8. MEMORY SCENE 2: EPIC CHILDHOOD TOY SWORD FIGHT (ANIME BATTLE)
     // ==================================================================
 
     private BufferedImage swordBackdrop;
@@ -2421,32 +2576,40 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     }
 
     // ==================================================================
-    // 8. TRANSITIONS & RENDERING PIPELINE
+    // 9. TRANSITIONS & RENDERING PIPELINE
     // ==================================================================
 
     private double warpFlash(double t) {
         double a = 1 - Math.abs(t - WARP_INTO_MEMORY) / WARP_RAMP;
         double b = 1 - Math.abs(t - WARP_INTO_SWORD) / WARP_RAMP;
-        double c = 1 - Math.abs(t - WARP_BACK) / WARP_RAMP;
-        return Math.max(0, Math.max(a, Math.max(b, c)));
+        double c = 1 - Math.abs(t - WARP_INTO_WATER) / WARP_RAMP;
+        double d = 1 - Math.abs(t - WARP_BACK) / WARP_RAMP;
+        return Math.max(0, Math.max(Math.max(a, b), Math.max(c, d)));
     }
 
     private void drawWarp(Graphics2D g2, double flash, double t) {
+        // The transitions into and out of the memory sequence close into darkness.
+        // The transition between memories keeps the original white flash.
+        boolean darkTransition = Math.abs(t - WARP_INTO_MEMORY) <= WARP_RAMP
+                || Math.abs(t - WARP_BACK) <= WARP_RAMP;
+        Color fadeColor = darkTransition ? Color.BLACK : Color.WHITE;
+        Color ringColor = darkTransition ? new Color(18, 18, 18) : Color.WHITE;
+
         // expanding rings, drawn with the midpoint circle, read as "a memory surfacing"
         int cx = 150, cy = 455;
-        g2.setColor(new Color(255, 255, 255, (int) (200 * flash)));
+        g2.setColor(new Color(ringColor.getRed(), ringColor.getGreen(), ringColor.getBlue(), (int) (200 * flash)));
         for (int i = 0; i < 4; i++) {
             double ringT = flash + i * 0.22;
             int r = (int) (ringT * 520);
             if (r > 4 && r < 700) midpointCircle(g2, cx, cy, r);
         }
 
-        g2.setColor(new Color(255, 255, 255, (int) (255 * flash * flash)));
+        g2.setColor(new Color(fadeColor.getRed(), fadeColor.getGreen(), fadeColor.getBlue(), (int) (255 * flash * flash)));
         g2.fillRect(0, 0, 600, 600);
     }
 
     // ==================================================================
-    // 9. ANIMATION LOOP (Lab_05 pattern) & MAIN
+    // 10. ANIMATION LOOP (Lab_05 pattern) & MAIN
     // ==================================================================
 
     public void run() {
@@ -2488,8 +2651,10 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
 
         if (t >= WARP_INTO_MEMORY && t < WARP_INTO_SWORD) {
             drawMemoryScene(g2, t - WARP_INTO_MEMORY);
-        } else if (t >= WARP_INTO_SWORD && t < WARP_BACK) {
+        } else if (t >= WARP_INTO_SWORD && t < WARP_INTO_WATER) {
             drawSwordFightScene(g2, t - WARP_INTO_SWORD);
+        } else if (t >= WARP_INTO_WATER && t < WARP_BACK) {
+            drawStreamScene(g2, t - WARP_INTO_WATER);
         } else {
             drawNightScene(g2, t);
         }
