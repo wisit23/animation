@@ -3,9 +3,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -96,18 +96,28 @@ public final class ExportAnimationToMp4 {
         if (configuredPath != null && !configuredPath.isBlank()) return configuredPath;
 
         Path toolsDirectory = Paths.get("tools", "ffmpeg").toAbsolutePath().normalize();
-        if (Files.isDirectory(toolsDirectory)) {
-            try (Stream<Path> files = Files.walk(toolsDirectory, 5)) {
-                Path localFfmpeg = files
-                        .filter(Files::isRegularFile)
-                        .filter(path -> path.getFileName().toString().equalsIgnoreCase("ffmpeg.exe"))
-                        .findFirst()
-                        .orElse(null);
-                if (localFfmpeg != null) return localFfmpeg.toString();
-            }
+        Path localFfmpeg = findExecutable(toolsDirectory);
+        if (localFfmpeg != null) return localFfmpeg.toString();
+
+        String localAppData = System.getenv("LOCALAPPDATA");
+        if (localAppData != null) {
+            Path wingetPackages = Paths.get(localAppData, "Microsoft", "WinGet", "Packages");
+            Path wingetFfmpeg = findExecutable(wingetPackages);
+            if (wingetFfmpeg != null) return wingetFfmpeg.toString();
         }
 
         return "ffmpeg";
+    }
+
+    private static Path findExecutable(Path directory) throws IOException {
+        if (!Files.isDirectory(directory)) return null;
+        try (Stream<Path> files = Files.walk(directory, 6)) {
+            return files
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().equalsIgnoreCase("ffmpeg.exe"))
+                    .findFirst()
+                    .orElse(null);
+        }
     }
 
     private static void renderFrames(
