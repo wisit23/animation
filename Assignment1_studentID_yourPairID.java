@@ -1553,31 +1553,48 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         // Put the waterline around the friends' waists instead of below their feet.
         final int waterY = 365;
 
-        // Bright outdoor memory backdrop: trees, a bank, and a flowing stream.
-        GradientPaint sky = new GradientPaint(0, 0, new Color(115, 205, 245),
-                                              0, 430, new Color(225, 248, 255));
-        g2.setPaint(sky);
+        // Forest-stream backdrop based on ref/scene4: a shaded green canopy,
+        // rocky banks, and a bright stream running through the foreground.
+        GradientPaint forestLight = new GradientPaint(0, 0, new Color(42, 88, 48),
+                                                      0, 430, new Color(145, 205, 125));
+        g2.setPaint(forestLight);
         g2.fillRect(0, 0, 600, 600);
 
-        g2.setColor(new Color(90, 175, 105));
-        g2.fillOval(-80, 205, 330, 250);
-        g2.fillOval(360, 185, 350, 270);
-        g2.setColor(new Color(55, 145, 78));
-        g2.fillOval(30, 280, 180, 145);
-        g2.fillOval(420, 265, 180, 160);
+        // Layered foliage makes the scene read as a forest rather than open sky.
+        g2.setColor(new Color(18, 65, 35, 220));
+        g2.fillOval(-80, -45, 260, 190);
+        g2.fillOval(90, -70, 270, 200);
+        g2.fillOval(330, -55, 300, 210);
+        g2.setColor(new Color(35, 112, 52, 230));
+        g2.fillOval(-55, 70, 230, 190);
+        g2.fillOval(170, 35, 220, 175);
+        g2.fillOval(390, 60, 260, 190);
 
-        // Tree trunks frame the stream and establish a clear outdoor setting.
-        g2.setColor(new Color(105, 70, 42));
-        g2.fillRect(35, 130, 34, 300);
-        g2.fillRect(525, 115, 38, 315);
-        g2.setColor(new Color(45, 125, 68));
-        g2.fillOval(0, 75, 125, 110);
-        g2.fillOval(475, 55, 145, 120);
+        // Tall trunks and branches frame the children like the reference image.
+        g2.setColor(new Color(72, 52, 34));
+        g2.fillRect(28, 70, 32, 330);
+        g2.fillRect(540, 55, 36, 345);
+        g2.setColor(new Color(92, 66, 40));
+        g2.fillRect(175, 95, 22, 300);
+        g2.fillRect(430, 80, 25, 315);
+        g2.setColor(new Color(20, 82, 39, 240));
+        g2.fillOval(-35, 35, 150, 125);
+        g2.fillOval(500, 15, 165, 140);
 
-        // Near bank, stream body, and soft current lines.
-        g2.setColor(new Color(185, 145, 78));
-        g2.fillRect(0, waterY - 14, 600, 30);
-        g2.setColor(new Color(45, 170, 215));
+        // Dappled sunlight filtering through the canopy.
+        for (int i = 0; i < 18; i++) {
+            int gx = 25 + (i * 71) % 570;
+            int gy = 25 + (i * 43) % 260;
+            fillMidpointCircle(g2, gx, gy, 3 + (i % 3), new Color(220, 245, 125, 80));
+        }
+
+        // Rocky banks and the shallow stream from the reference composition.
+        g2.setColor(new Color(85, 103, 76));
+        g2.fillOval(-45, waterY - 40, 160, 58);
+        g2.fillOval(475, waterY - 45, 170, 65);
+        g2.fillOval(80, waterY - 30, 95, 38);
+        g2.fillOval(390, waterY - 25, 110, 40);
+        g2.setColor(new Color(42, 145, 180));
         g2.fillRect(0, waterY + 2, 600, 230);
         g2.setColor(new Color(95, 215, 238, 180));
         for (int i = 0; i < 9; i++) {
@@ -1595,6 +1612,15 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         drawStreamFriend(g2, 365, waterY, 2, new Color(105, 115, 240), st);
 
         drawStreamSurface(g2, waterY, st);
+
+        // Foreground stones give the stream depth and keep the composition close
+        // to the rocky creek in the reference.
+        g2.setColor(new Color(58, 88, 78));
+        g2.fillOval(-45, 525, 170, 82);
+        g2.fillOval(455, 515, 185, 95);
+        g2.setColor(new Color(112, 145, 117, 180));
+        g2.fillOval(8, 535, 80, 24);
+        g2.fillOval(505, 530, 92, 28);
 
         // The fourth friend is in front of the water while jumping into it.
         drawStreamFriend(g2, 505, waterY, 3, new Color(235, 105, 175), st);
