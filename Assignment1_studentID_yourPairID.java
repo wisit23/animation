@@ -1,10 +1,10 @@
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
+import javax.swing.*;
 
 public class Assignment1_studentID_yourPairID extends JPanel implements Runnable {
 
@@ -1546,182 +1546,750 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     }
 
     // ==================================================================
-    // 7. MEMORY SCENE 3: CHILDHOOD FRIENDS PLAYING IN A STREAM
+    // 7. MEMORY SCENE 3: CHILDHOOD FRIENDS PLAYING IN A FOREST STREAM
     // ==================================================================
 
-    private void drawStreamScene(Graphics2D g2, double st) {
-        // Put the waterline around the friends' waists instead of below their feet.
-        final int waterY = 365;
+    private BufferedImage streamBackdrop;
 
-        // Forest-stream backdrop based on ref/scene4: a shaded green canopy,
-        // rocky banks, and a bright stream running through the foreground.
-        GradientPaint forestLight = new GradientPaint(0, 0, new Color(42, 88, 48),
-                                                      0, 430, new Color(145, 205, 125));
-        g2.setPaint(forestLight);
+    private BufferedImage buildStreamBackdrop() {
+        BufferedImage img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_RGB);
+        Graphics2D bg = img.createGraphics();
+        bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        bg.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+        // 1. Warm sunny forest canopy sky gradient (sunlight filtering through gaps)
+        LinearGradientPaint skyGrad = new LinearGradientPaint(
+            new Point2D.Float(100, 0), new Point2D.Float(300, 360),
+            new float[]{0.0f, 0.45f, 0.85f, 1.0f},
+            new Color[]{
+                new Color(225, 248, 185), // Golden sunlight zenith
+                new Color(175, 228, 140), // Bright lime canopy glow
+                new Color(105, 180, 90),  // Mid-tone forest atmosphere
+                new Color(60, 135, 68)    // Deep stream-level forest green
+            }
+        );
+        bg.setPaint(skyGrad);
+        bg.fillRect(0, 0, 600, 600);
+
+        // 2. Layer 1: Distant deep forest foliage & trees
+        bg.setColor(new Color(18, 56, 32, 230));
+        bg.fillOval(-100, -60, 320, 220);
+        bg.fillOval(80, -90, 300, 230);
+        bg.fillOval(290, -80, 360, 240);
+        bg.fillOval(50, 40, 250, 180);
+        bg.fillOval(320, 30, 280, 190);
+
+        // 3. Layer 2: Mid-ground lush leaves & branches
+        bg.setColor(new Color(32, 92, 45, 235));
+        bg.fillOval(-70, 20, 260, 190);
+        bg.fillOval(130, 10, 250, 180);
+        bg.fillOval(350, 15, 290, 200);
+        bg.fillOval(-30, 110, 210, 160);
+        bg.fillOval(420, 95, 220, 170);
+
+        // 4. Distant tree trunks framing the stream
+        bg.setColor(new Color(65, 48, 30));
+        bg.fillRect(155, 90, 18, 270);
+        bg.fillRect(435, 75, 20, 285);
+        bg.fillRect(230, 110, 12, 245);
+        bg.fillRect(365, 105, 14, 250);
+
+        // 5. Layer 3: Sunlit leafy clusters (Warm bright greens)
+        bg.setColor(new Color(55, 142, 60, 240));
+        bg.fillOval(-50, -20, 200, 150);
+        bg.fillOval(90, 60, 190, 140);
+        bg.fillOval(270, 45, 210, 150);
+        bg.fillOval(450, 10, 220, 160);
+
+        bg.setColor(new Color(95, 185, 72, 230));
+        bg.fillOval(-20, 25, 140, 110);
+        bg.fillOval(140, 85, 130, 95);
+        bg.fillOval(310, 70, 145, 105);
+        bg.fillOval(480, 40, 150, 115);
+
+        // 6. Foreground main framing tree trunks with bark texture (Lab 2 Bresenham Lines)
+        // Left main tree trunk
+        bg.setColor(new Color(58, 40, 24));
+        bg.fillRect(15, 40, 42, 330);
+        bg.setColor(new Color(78, 54, 32));
+        bg.fillRect(22, 40, 26, 330);
+        // Bark texture lines
+        bg.setColor(new Color(42, 28, 16));
+        for (int ly = 60; ly < 360; ly += 24) {
+            bresenhamLine(bg, 18, ly, 48, ly + 14, 1);
+            bresenhamLine(bg, 25, ly + 10, 52, ly + 22, 0);
+        }
+        // Left tree branch reaching right
+        bg.setColor(new Color(58, 40, 24));
+        int[] lbx = {35, 140, 145, 35};
+        int[] lby = {120, 80, 96, 138};
+        bg.fillPolygon(lbx, lby, 4);
+
+        // Right main tree trunk
+        bg.setColor(new Color(54, 36, 22));
+        bg.fillRect(535, 25, 46, 345);
+        bg.setColor(new Color(75, 52, 30));
+        bg.fillRect(542, 25, 30, 345);
+        // Bark texture lines
+        bg.setColor(new Color(38, 25, 14));
+        for (int ry = 45; ry < 360; ry += 26) {
+            bresenhamLine(bg, 538, ry, 574, ry + 16, 1);
+            bresenhamLine(bg, 544, ry + 12, 576, ry + 26, 0);
+        }
+        // Right tree branch reaching left
+        int[] rbx = {550, 450, 445, 550};
+        int[] rby = {105, 65, 80, 122};
+        bg.fillPolygon(rbx, rby, 4);
+
+        // 7. Layer 4: Overhanging canopy leafy fronds on branches
+        bg.setColor(new Color(42, 120, 52, 245));
+        bg.fillOval(-15, 80, 170, 110);
+        bg.fillOval(430, 50, 175, 120);
+        bg.setColor(new Color(118, 205, 82, 240));
+        bg.fillOval(20, 100, 110, 75);
+        bg.fillOval(465, 75, 115, 80);
+
+        // 8. Distant Riverbank ground and gravel slope
+        LinearGradientPaint bankGrad = new LinearGradientPaint(
+            new Point2D.Float(0, 310), new Point2D.Float(0, 380),
+            new float[]{0.0f, 0.5f, 1.0f},
+            new Color[]{new Color(50, 75, 48), new Color(72, 92, 62), new Color(42, 62, 52)}
+        );
+        bg.setPaint(bankGrad);
+        bg.fillRect(0, 315, 600, 85);
+
+        // 9. Mid-ground Riverbed boulders & Mossy stones
+        // Left bank boulders
+        fillMossyBoulder(bg, -25, 335, 140, 68, new Color(75, 85, 76), new Color(60, 130, 55));
+        fillMossyBoulder(bg, 75, 345, 95, 48, new Color(85, 98, 88), new Color(72, 145, 65));
+        // Right bank boulders
+        fillMossyBoulder(bg, 445, 340, 125, 56, new Color(80, 92, 82), new Color(68, 138, 60));
+        fillMossyBoulder(bg, 520, 330, 130, 65, new Color(72, 82, 74), new Color(55, 122, 50));
+        // Small stream stones in background water
+        fillMossyBoulder(bg, 190, 348, 55, 28, new Color(92, 105, 96), new Color(80, 150, 70));
+        fillMossyBoulder(bg, 380, 344, 65, 32, new Color(88, 100, 92), new Color(75, 142, 65));
+
+        bg.dispose();
+        return img;
+    }
+
+    // Helper: Draws a 3D rounded river boulder with top moss layer and highlight
+    private static void fillMossyBoulder(Graphics2D g2, int x, int y, int w, int h, Color stoneColor, Color mossColor) {
+        // Base rock shadow
+        g2.setColor(new Color(25, 35, 30, 180));
+        g2.fillOval(x + 2, y + 4, w, h);
+        // Base stone body
+        g2.setColor(stoneColor);
+        g2.fillOval(x, y, w, h);
+        // Stone texture shade
+        g2.setColor(new Color(stoneColor.getRed() - 18, stoneColor.getGreen() - 18, stoneColor.getBlue() - 18));
+        g2.fillOval(x + 4, y + h / 3, w - 8, h * 2 / 3);
+        // Moss cap on top (Midpoint Ellipse)
+        g2.setColor(mossColor);
+        g2.fillOval(x + 3, y - 2, w - 6, h / 2 + 2);
+        // Soft moss highlight
+        g2.setColor(new Color(Math.min(255, mossColor.getRed() + 45), Math.min(255, mossColor.getGreen() + 50), mossColor.getBlue()));
+        g2.fillOval(x + w / 5, y, w * 3 / 5, h / 4 + 2);
+    }
+
+    // Dynamic God Rays (Crepuscular Sunlight Beams) filtering through the canopy
+    private void drawSunbeams(Graphics2D g2, double st) {
+        AffineTransform oldTx = g2.getTransform();
+
+        // 4 Golden translucent sunbeams shining diagonally from top-left
+        int[][] rays = {
+            {-30, -20, 220, 600, 110},
+            {80, -20, 390, 600, 140},
+            {220, -20, 520, 600, 100},
+            {380, -20, 640, 600, 80}
+        };
+
+        for (int i = 0; i < rays.length; i++) {
+            int x1 = rays[i][0];
+            int y1 = rays[i][1];
+            int x2 = rays[i][2];
+            int y2 = rays[i][3];
+            int w = rays[i][4];
+
+            double pulse = Math.sin(st * 1.8 + i * 1.2) * 0.15 + 0.85;
+            int alphaTop = (int) (55 * pulse);
+            int alphaBottom = (int) (15 * pulse);
+
+            Path2D.Double beam = new Path2D.Double();
+            beam.moveTo(x1, y1);
+            beam.lineTo(x1 + w, y1);
+            beam.lineTo(x2 + w * 1.8, y2);
+            beam.lineTo(x2, y2);
+            beam.closePath();
+
+            LinearGradientPaint beamGrad = new LinearGradientPaint(
+                new Point2D.Float(x1, y1), new Point2D.Float(x2, y2),
+                new float[]{0.0f, 0.6f, 1.0f},
+                new Color[]{
+                    new Color(255, 252, 200, alphaTop),
+                    new Color(245, 240, 160, (alphaTop + alphaBottom) / 2),
+                    new Color(220, 245, 140, alphaBottom)
+                }
+            );
+            g2.setPaint(beamGrad);
+            g2.fill(beam);
+        }
+
+        // Floating sunbeam bokeh dust sparkles (Lab 4 Midpoint Circle)
+        Random sparkRand = new Random(404);
+        for (int i = 0; i < 28; i++) {
+            double baseX = sparkRand.nextDouble() * 580 + 10;
+            double baseY = sparkRand.nextDouble() * 320 + 30;
+            double driftX = Math.sin(st * 1.4 + i * 0.7) * 16;
+            double driftY = Math.cos(st * 1.1 + i * 0.9) * 12;
+            int x = (int) (baseX + driftX);
+            int y = (int) (baseY + driftY);
+            int r = 1 + sparkRand.nextInt(3);
+            int spkAlpha = (int) (90 + 90 * Math.sin(st * 3.0 + i * 1.5));
+            fillMidpointCircle(g2, x, y, r, new Color(255, 255, 210, Math.max(20, Math.min(230, spkAlpha))));
+        }
+
+        g2.setTransform(oldTx);
+    }
+
+    // Submerged Riverbed Details: Clear water base, smooth gravel and underwater pebbles
+    private void drawRiverbed(Graphics2D g2, int waterY) {
+        // Deep crystal riverbed gradient
+        LinearGradientPaint waterBed = new LinearGradientPaint(
+            new Point2D.Float(300, waterY), new Point2D.Float(300, 600),
+            new float[]{0.0f, 0.35f, 0.75f, 1.0f},
+            new Color[]{
+                new Color(45, 130, 145), // Clear shallow aquamarine
+                new Color(32, 110, 130), // Emerald river current
+                new Color(24, 88, 112),  // Deeper pool
+                new Color(18, 65, 90)    // River bottom depth
+            }
+        );
+        g2.setPaint(waterBed);
+        g2.fillRect(0, waterY, 600, 600 - waterY);
+
+        // Submerged riverbed pebbles & stones (Midpoint Ellipse Algorithm)
+        Random pebRand = new Random(888);
+        for (int i = 0; i < 45; i++) {
+            int px = pebRand.nextInt(580) + 10;
+            int py = waterY + 15 + pebRand.nextInt(215);
+            int rx = 4 + pebRand.nextInt(9);
+            int ry = 3 + pebRand.nextInt(6);
+            int gray = 50 + pebRand.nextInt(40);
+            int alpha = 130 + pebRand.nextInt(60);
+            fillMidpointEllipse(g2, px, py, rx, ry, new Color(gray, gray + 15, gray + 25, alpha));
+            // Pebble highlight
+            fillMidpointEllipse(g2, px - 1, py - 1, Math.max(1, rx - 3), Math.max(1, ry - 2),
+                    new Color(gray + 40, gray + 55, gray + 65, alpha / 2));
+        }
+    }
+
+    // Translucent Water Surface, Organic Caustics, and Expanding Circular Ripples
+    private void drawWaterSurface(Graphics2D g2, int waterY, double st) {
+        // Translucent water surface layer overlay (Submerges legs at waist level)
+        LinearGradientPaint waterLayer = new LinearGradientPaint(
+            new Point2D.Float(300, waterY), new Point2D.Float(300, 600),
+            new float[]{0.0f, 0.35f, 0.8f, 1.0f},
+            new Color[]{
+                new Color(90, 205, 230, 130), // Shimmering light turquoise surface
+                new Color(45, 165, 195, 160), // Mid-stream clear blue
+                new Color(28, 130, 165, 195),
+                new Color(18, 85, 120, 215)   // Deep clear water
+            }
+        );
+        g2.setPaint(waterLayer);
+        g2.fillRect(0, waterY, 600, 600 - waterY);
+
+        // Soft organic undulating sunlight caustics (Lab 3 Bezier Curves)
+        for (int i = 0; i < 16; i++) {
+            double cx = 30 + (i * 73) % 540;
+            double cy = waterY + 22 + (i * 37) % 190;
+            double wave = Math.sin(st * 2.8 + i * 0.9) * 5.0;
+            int alpha = (int) (65 + 35 * Math.sin(st * 2.2 + i));
+
+            g2.setColor(new Color(220, 252, 255, alpha));
+            bezierCurve(g2,
+                cx - 24, cy + wave,
+                cx - 8, cy - 6 - wave,
+                cx + 8, cy + 6 + wave,
+                cx + 24, cy - wave, 2);
+        }
+
+        // Concentric circular expanding ripples around characters in water (Midpoint Ellipse)
+        int[] friendX = {130, 270, 370, 480};
+        int[] friendY = {waterY + 10, waterY + 6, waterY + 14, waterY + 4};
+        for (int f = 0; f < friendX.length; f++) {
+            int cx = friendX[f];
+            int cy = friendY[f];
+            for (int r = 0; r < 3; r++) {
+                double prog = ((st * 1.6 + r * 0.33 + f * 0.25) % 1.0);
+                int rx = (int) (10 + prog * 38);
+                int ry = (int) (4 + prog * 13);
+                int alpha = (int) (175 * (1.0 - prog));
+                g2.setColor(new Color(215, 248, 255, alpha));
+                midpointEllipse(g2, cx, cy, rx, ry);
+            }
+        }
+    }
+
+    // =========================================================================
+    // THE 4 CLASSIC STICKMEN FRIENDS WEARING COLORED SHIRTS
+    // =========================================================================
+
+    // Friend 1 (Left): Stickman in Red shirt - Scooping & splashing water enthusiastically!
+    private void drawSplashingFriend1(Graphics2D g2, int x, int waterY, double st) {
+        int t2 = 2;
+        int headR = 15;
+
+        // Splashing scoop rhythm
+        double splashCycle = (st * 4.2) % (Math.PI * 2);
+        double scoop = Math.sin(splashCycle);
+        double bob = Math.abs(Math.sin(st * 4.2)) * 3.0;
+
+        int hipY = (int) (waterY - 6 + bob);
+        int shoulderY = hipY - 32;
+        int headY = shoulderY - 22;
+
+        int torsoShX = x + 14; // Leaning forward toward center
+        int torsoHipX = x - 6;
+
+        // 1. Submerged Stick Legs
+        g2.setColor(INK);
+        int knee1X = torsoHipX + 12, knee1Y = waterY + 12;
+        int foot1X = torsoHipX + 22, foot1Y = waterY + 24;
+        int knee2X = torsoHipX - 8, knee2Y = waterY + 13;
+        int foot2X = torsoHipX - 16, foot2Y = waterY + 26;
+        bresenhamLine(g2, torsoHipX, hipY, knee1X, knee1Y, t2);
+        bresenhamLine(g2, knee1X, knee1Y, foot1X, foot1Y, t2);
+        bresenhamLine(g2, torsoHipX, hipY, knee2X, knee2Y, t2);
+        bresenhamLine(g2, knee2X, knee2Y, foot2X, foot2Y, t2);
+        g2.fillOval(foot1X - 5, foot1Y - 3, 11, 6);
+        g2.fillOval(foot2X - 5, foot2Y - 3, 11, 6);
+
+        // Simple Navy Shorts
+        g2.setColor(new Color(35, 55, 110));
+        fillMidpointEllipse(g2, torsoHipX + 2, hipY + 1, 11, 7, new Color(35, 55, 110));
+
+        // 2. Stick Torso & Simple Red Shirt
+        g2.setColor(INK);
+        bresenhamLine(g2, torsoShX, shoulderY, torsoHipX, hipY, t2);
+
+        // Simple Red Shirt
+        g2.setColor(new Color(230, 45, 45));
+        fillMidpointEllipse(g2, (torsoShX + torsoHipX) / 2 + 1, (shoulderY + hipY) / 2, 10, 15, new Color(230, 45, 45));
+
+        // 3. Stick Arms: Scooping and splashing water
+        int armThrowX = (int) (torsoShX + 20 + scoop * 14);
+        int armThrowY = (int) (shoulderY + 14 - scoop * 20);
+
+        // Back arm
+        int hand2X = armThrowX - 4;
+        int hand2Y = armThrowY + 6;
+        bresenhamLine(g2, torsoShX - 4, shoulderY + 2, hand2X, hand2Y, t2);
+        fillMidpointCircle(g2, hand2X, hand2Y, 3, INK);
+
+        // Front arm (Leading scoop)
+        int hand1X = armThrowX + 6;
+        int hand1Y = armThrowY - 2;
+        bresenhamLine(g2, torsoShX + 4, shoulderY + 4, hand1X, hand1Y, t2);
+        fillMidpointCircle(g2, hand1X, hand1Y, 3, INK);
+
+        // 4. Classic Stickman Head & Simple Expressive Face
+        int headX = torsoShX + 4;
+        bresenhamLine(g2, headX, headY + headR, torsoShX, shoulderY, t2);
+
+        g2.setColor(Color.WHITE);
+        g2.fillOval(headX - headR, headY - headR, headR * 2, headR * 2);
+        g2.setColor(INK);
+        midpointCircle(g2, headX, headY, headR);
+
+        // Simple hair tufts (Classic stickman line style)
+        bresenhamLine(g2, headX - 4, headY - headR, headX - 8, headY - headR - 6, 1);
+        bresenhamLine(g2, headX + 2, headY - headR, headX + 2, headY - headR - 8, 1);
+        bresenhamLine(g2, headX + 7, headY - headR + 2, headX + 12, headY - headR - 5, 1);
+
+        // Simple Happy Face: Left eye open dot, Right eye wink (>), Laughing curved mouth
+        int ex = headX + 3;
+        g2.fillOval(ex + 2, headY - 4, 3, 4); // Left eye dot
+        bezierCurve(g2, ex - 8, headY - 6, ex - 4, headY - 3, ex - 4, headY - 3, ex - 8, headY); // Wink >
+        bezierCurve(g2, ex - 6, headY + 4, ex - 1, headY + 8, ex + 3, headY + 8, ex + 7, headY + 4); // Smile
+    }
+
+    // Friend 2 (Center-Back): Stickman in Green shirt - Raising both arms splashing & laughing!
+    private void drawBucketFriend2(Graphics2D g2, int x, int waterY, double st) {
+        int t2 = 2;
+        int headR = 15;
+
+        // Joyful child sway
+        double sway = Math.sin(st * 3.5) * 2.5;
+        int hipY = (int) (waterY - 14 + sway);
+        int shoulderY = hipY - 30;
+        int headY = shoulderY - 20;
+
+        // 1. Submerged Stick Legs
+        g2.setColor(INK);
+        bresenhamLine(g2, x, hipY, x - 8, waterY + 12, t2);
+        bresenhamLine(g2, x, hipY, x + 9, waterY + 12, t2);
+
+        // Simple Olive Shorts
+        g2.setColor(new Color(55, 75, 50));
+        fillMidpointEllipse(g2, x, hipY + 1, 10, 6, new Color(55, 75, 50));
+
+        // 2. Stick Torso & Simple Green Shirt
+        g2.setColor(INK);
+        bresenhamLine(g2, x, shoulderY, x, hipY, t2);
+
+        // Simple Green Shirt
+        g2.setColor(new Color(45, 155, 65));
+        fillMidpointEllipse(g2, x, (shoulderY + hipY) / 2, 9, 14, new Color(45, 155, 65));
+
+        // 3. Stick Arms: Cheering and splashing with both hands raised high (Bare hands, no props)
+        double armWaveL = Math.sin(st * 6.0) * 4;
+        double armWaveR = Math.cos(st * 6.0) * 4;
+
+        int handLX = x - 18, handLY = (int) (shoulderY - 22 + armWaveL);
+        int handRX = x + 18, handRY = (int) (shoulderY - 22 + armWaveR);
+
+        bresenhamLine(g2, x, shoulderY + 3, handLX, handLY, t2);
+        bresenhamLine(g2, x, shoulderY + 3, handRX, handRY, t2);
+        fillMidpointCircle(g2, handLX, handLY, 3, INK);
+        fillMidpointCircle(g2, handRX, handRY, 3, INK);
+
+        // 4. Classic Stickman Head & Cheerful Face
+        bresenhamLine(g2, x, headY + headR, x, shoulderY, t2);
+        g2.setColor(Color.WHITE);
+        g2.fillOval(x - headR, headY - headR, headR * 2, headR * 2);
+        g2.setColor(INK);
+        midpointCircle(g2, x, headY, headR);
+
+        // Simple stick hair
+        bresenhamLine(g2, x - 3, headY - headR, x - 5, headY - headR - 7, 1);
+        bresenhamLine(g2, x + 3, headY - headR, x + 5, headY - headR - 7, 1);
+
+        // Simple happy face (Two dots & wide smile)
+        g2.fillOval(x - 5, headY - 4, 3, 4);
+        g2.fillOval(x + 3, headY - 4, 3, 4);
+        bezierCurve(g2, x - 6, headY + 3, x - 2, headY + 8, x + 2, headY + 8, x + 6, headY + 3);
+    }
+
+    // Friend 3 (Center-Front): Stickman in Blue shirt, sitting in stream, laughing happily (^ ^)!
+    private void drawLaughingFriend3(Graphics2D g2, int x, int waterY, double st) {
+        int t2 = 2;
+        int headR = 15;
+
+        // Laughing bounce
+        double laughBounce = Math.abs(Math.sin(st * 6.5)) * 2.5;
+        int hipY = (int) (waterY + 8 - laughBounce);
+        int shoulderY = hipY - 28;
+        int headY = shoulderY - 20;
+
+        // 1. Sitting in riverbed - Stick legs kicking in water
+        double kick1 = Math.sin(st * 8.0) * 6.0;
+        double kick2 = Math.cos(st * 8.0) * 6.0;
+
+        g2.setColor(INK);
+        int knee1X = x - 18, knee1Y = (int) (waterY + 14 + kick1);
+        int foot1X = x - 30, foot1Y = (int) (waterY + 8 - kick1);
+        bresenhamLine(g2, x - 5, hipY, knee1X, knee1Y, t2);
+        bresenhamLine(g2, knee1X, knee1Y, foot1X, foot1Y, t2);
+        g2.fillOval(foot1X - 4, foot1Y - 3, 10, 6);
+
+        int knee2X = x + 16, knee2Y = (int) (waterY + 15 + kick2);
+        int foot2X = x + 28, foot2Y = (int) (waterY + 9 - kick2);
+        bresenhamLine(g2, x + 5, hipY, knee2X, knee2Y, t2);
+        bresenhamLine(g2, knee2X, knee2Y, foot2X, foot2Y, t2);
+        g2.fillOval(foot2X - 4, foot2Y - 3, 10, 6);
+
+        // Simple Khaki Shorts
+        g2.setColor(new Color(165, 145, 95));
+        fillMidpointEllipse(g2, x, hipY, 12, 8, new Color(165, 145, 95));
+
+        // 2. Stick Torso & Simple Blue Shirt
+        g2.setColor(INK);
+        bresenhamLine(g2, x, shoulderY, x, hipY, t2);
+
+        // Simple Blue Shirt
+        g2.setColor(new Color(45, 105, 220));
+        fillMidpointEllipse(g2, x, (shoulderY + hipY) / 2, 9, 13, new Color(45, 105, 220));
+
+        // 3. Stick Arms thrown up in excitement receiving splash
+        int armWaveL = (int) (Math.sin(st * 7.0) * 5);
+        int armWaveR = (int) (Math.cos(st * 7.0) * 5);
+
+        int handLX = x - 24, handLY = shoulderY - 14 + armWaveL;
+        int handRX = x + 24, handRY = shoulderY - 16 + armWaveR;
+        bresenhamLine(g2, x - 6, shoulderY + 3, handLX, handLY, t2);
+        bresenhamLine(g2, x + 6, shoulderY + 3, handRX, handRY, t2);
+        fillMidpointCircle(g2, handLX, handLY, 3, INK);
+        fillMidpointCircle(g2, handRX, handRY, 3, INK);
+
+        // 4. Classic Stickman Head & Happy Laughing Face (^ ^)
+        bresenhamLine(g2, x, headY + headR, x, shoulderY, t2);
+        g2.setColor(Color.WHITE);
+        g2.fillOval(x - headR, headY - headR, headR * 2, headR * 2);
+        g2.setColor(INK);
+        midpointCircle(g2, x, headY, headR);
+
+        // Simple hair tufts
+        bresenhamLine(g2, x - 4, headY - headR, x - 6, headY - headR - 6, 1);
+        bresenhamLine(g2, x + 1, headY - headR, x + 1, headY - headR - 8, 1);
+        bresenhamLine(g2, x + 6, headY - headR, x + 8, headY - headR - 6, 1);
+
+        // Happy crescent closed eyes (^ ^) & laughing mouth
+        int ey = headY - 2;
+        bezierCurve(g2, x - 8, ey, x - 5, ey - 5, x - 2, ey - 5, x, ey);
+        bezierCurve(g2, x + 2, ey, x + 5, ey - 5, x + 8, ey - 5, x + 10, ey);
+        bezierCurve(g2, x - 6, headY + 3, x - 1, headY + 8, x + 3, headY + 8, x + 7, headY + 3);
+    }
+
+    // Friend 4 (Right): Stickman in Yellow shirt - Stepping and cheering with bare hands!
+    private void drawNetFriend4(Graphics2D g2, int x, int waterY, double st) {
+        int t2 = 2;
+        int headR = 15;
+
+        // Cheerful step bounce
+        double step = Math.sin(st * 3.0) * 3.0;
+        int hipY = (int) (waterY - 20 + step);
+        int shoulderY = hipY - 30;
+        int headY = shoulderY - 20;
+
+        // 1. Stick Legs: One planted on shallow stone, other knee lifted
+        g2.setColor(INK);
+        int plantX = x - 10, plantY = waterY + 4;
+        bresenhamLine(g2, x, hipY, plantX + 2, waterY - 8, t2);
+        bresenhamLine(g2, plantX + 2, waterY - 8, plantX, plantY, t2);
+        g2.fillOval(plantX - 5, plantY - 3, 11, 6);
+
+        int stepKneeX = x + 12, stepKneeY = hipY + 10;
+        int stepFootX = x + 18, stepFootY = waterY - 6;
+        bresenhamLine(g2, x, hipY, stepKneeX, stepKneeY, t2);
+        bresenhamLine(g2, stepKneeX, stepKneeY, stepFootX, stepFootY, t2);
+        g2.fillOval(stepFootX - 5, stepFootY - 3, 11, 6);
+
+        // Simple Brown Shorts
+        g2.setColor(new Color(135, 80, 45));
+        fillMidpointEllipse(g2, x + 2, hipY + 2, 10, 6, new Color(135, 80, 45));
+
+        // 2. Stick Torso & Simple Yellow Shirt
+        g2.setColor(INK);
+        bresenhamLine(g2, x + 2, shoulderY, x, hipY, t2);
+
+        // Simple Yellow Shirt
+        g2.setColor(new Color(245, 205, 35));
+        fillMidpointEllipse(g2, x + 1, (shoulderY + hipY) / 2, 9, 14, new Color(245, 205, 35));
+
+        // 3. Stick Arms: Cheering and waving happily with bare hands (No props)
+        double armWaveL = Math.cos(st * 5.0) * 5;
+        double armWaveR = Math.sin(st * 5.0) * 5;
+
+        int hand1X = x - 18, hand1Y = (int) (shoulderY - 18 + armWaveL);
+        int hand2X = x + 20, hand2Y = (int) (shoulderY - 22 + armWaveR);
+
+        bresenhamLine(g2, x + 2, shoulderY + 3, hand1X, hand1Y, t2);
+        bresenhamLine(g2, x + 2, shoulderY + 3, hand2X, hand2Y, t2);
+        fillMidpointCircle(g2, hand1X, hand1Y, 3, INK);
+        fillMidpointCircle(g2, hand2X, hand2Y, 3, INK);
+
+        // 4. Classic Stickman Head & Cheering Face
+        int headX = x + 3;
+        bresenhamLine(g2, headX, headY + headR, x + 2, shoulderY, t2);
+        g2.setColor(Color.WHITE);
+        g2.fillOval(headX - headR, headY - headR, headR * 2, headR * 2);
+        g2.setColor(INK);
+        midpointCircle(g2, headX, headY, headR);
+
+        // Simple hair tufts
+        bresenhamLine(g2, headX - 4, headY - headR, headX - 8, headY - headR - 6, 1);
+        bresenhamLine(g2, headX + 3, headY - headR, headX + 5, headY - headR - 7, 1);
+
+        // Cheerful face (Two dots & excited smile)
+        g2.fillOval(headX - 4, headY - 4, 3, 4);
+        g2.fillOval(headX + 4, headY - 4, 3, 4);
+        bezierCurve(g2, headX - 5, headY + 3, headX, headY + 8, headX + 3, headY + 8, headX + 6, headY + 3);
+    }
+
+    // Dynamic Multi-layered Water Splashes, Smooth Curved Arcs, and Droplet Spray Physics
+    private void drawWaterSplashesAndSpray(Graphics2D g2, double st) {
+        // 1. Organic Smooth Curved Water Stream Arcs (Thrown from Friend 1 -> Friend 3) - Perfectly smooth curves
+        for (int arc = 0; arc < 5; arc++) {
+            double offset = (arc - 2) * 5.0;
+            double waveY = Math.sin(st * 4.0 + arc * 1.3) * 5.0;
+            int alpha = 170 - Math.abs(arc - 2) * 35;
+            g2.setColor(new Color(230, 250, 255, Math.max(50, alpha)));
+            bezierCurve(g2,
+                150, 335 + offset * 0.5,
+                205 + offset, 235 + waveY + offset,
+                295 + offset, 250 - waveY + offset,
+                368, 360 + offset * 0.5, 32);
+        }
+
+        // Inner bright core water arc
+        g2.setColor(new Color(255, 255, 255, 230));
+        bezierCurve(g2, 150, 333, 205, 238, 295, 252, 368, 358, 32);
+
+        // 2. Animated Flying Water Droplets (Lab 4 Midpoint Circle) with gravity parabolic curves
+        Random dropRand = new Random(777);
+        for (int i = 0; i < 46; i++) {
+            double prog = ((st * 2.8 + i * 0.065) % 1.0);
+            double startX = 145 + dropRand.nextDouble() * 20;
+            double startY = 325 + dropRand.nextDouble() * 20;
+            double targetX = 350 + dropRand.nextDouble() * 45;
+            double targetY = 365 + dropRand.nextDouble() * 30;
+
+            // Parabolic trajectory arc
+            double curX = startX + (targetX - startX) * prog;
+            double arcHeight = Math.sin(prog * Math.PI) * (78 + (i % 6) * 10);
+            double curY = startY + (targetY - startY) * prog - arcHeight;
+
+            int r = 1 + (i % 3);
+            int alpha = (int) (240 * Math.sin(prog * Math.PI));
+            if (alpha > 10) {
+                fillMidpointCircle(g2, (int) curX, (int) curY, r, new Color(240, 252, 255, alpha));
+                if (r > 1) {
+                    fillMidpointCircle(g2, (int) curX - 1, (int) curY - 1, 1, new Color(255, 255, 255, alpha));
+                }
+            }
+        }
+
+        // 3. Impact Splash Crown & Foam around Friend 3 (Center)
+        int splashCX = 370;
+        int splashCY = 372;
+        for (int s = 0; s < 14; s++) {
+            double sAngle = Math.PI * (0.05 + 0.9 * s / 13.0);
+            double sDist = 20 + Math.sin(st * 8.0 + s * 1.1) * 16;
+            int sx = splashCX + (int) (Math.cos(sAngle) * sDist * 1.5);
+            int sy = splashCY - (int) (Math.sin(sAngle) * sDist);
+            fillMidpointCircle(g2, sx, sy, 2 + (s % 3), new Color(230, 250, 255, 220));
+            // Splash spray lines
+            g2.setColor(new Color(210, 245, 255, 170));
+            bresenhamLine(g2, splashCX + (int)(Math.cos(sAngle) * 10), splashCY - 4, sx, sy, 0);
+        }
+
+        // 4. Splash at Friend 4's stepping foot
+        int footSplashX = 510;
+        int footSplashY = 370;
+        for (int k = 0; k < 6; k++) {
+            double kProg = ((st * 4.0 + k * 0.18) % 1.0);
+            int kx = footSplashX + (int) ((k - 3) * 6 * kProg);
+            int ky = footSplashY - (int) (Math.sin(kProg * Math.PI) * 14);
+            fillMidpointCircle(g2, kx, ky, 2, new Color(230, 250, 255, (int)(200 * (1 - kProg))));
+        }
+    }
+
+    // Foreground Boulders, Critter/Fish Box, and Lush Riverbank Foliage
+    private void drawForegroundProps(Graphics2D g2, double st) {
+        // 1. Large Left Foreground Mossy Boulder
+        fillMossyBoulder(g2, -65, 490, 220, 130, new Color(52, 65, 58), new Color(42, 118, 48));
+        fillMossyBoulder(g2, 60, 525, 130, 85, new Color(62, 75, 68), new Color(55, 132, 58));
+
+        // 2. Large Right Foreground Mossy Boulder (Where the Critter Box sits!)
+        fillMossyBoulder(g2, 430, 485, 210, 135, new Color(55, 68, 62), new Color(48, 125, 52));
+        fillMossyBoulder(g2, 380, 535, 110, 75, new Color(65, 78, 72), new Color(58, 138, 62));
+
+        // 3. Critter / Fish Catching Box (กล่องดักปลา/แมลงฝาสีฟ้า) sitting on right boulder
+        int boxX = 475;
+        int boxY = 478;
+        int boxW = 54;
+        int boxH = 38;
+
+        // Contact shadow on the boulder
+        g2.setColor(new Color(20, 35, 25, 160));
+        fillMidpointEllipse(g2, boxX + boxW / 2, boxY + boxH + 2, boxW / 2 + 4, 6, new Color(20, 35, 25, 160));
+
+        // Transparent acrylic box body
+        g2.setColor(new Color(185, 235, 245, 140));
+        g2.fillRoundRect(boxX, boxY + 10, boxW, boxH - 10, 6, 6);
+        g2.setColor(new Color(120, 185, 205, 220));
+        g2.drawRoundRect(boxX, boxY + 10, boxW, boxH - 10, 6, 6);
+
+        // Water line & pebbles inside box
+        g2.setColor(new Color(85, 180, 210, 160));
+        g2.fillRect(boxX + 2, boxY + 18, boxW - 4, boxH - 20);
+        g2.setColor(new Color(75, 65, 55));
+        fillMidpointCircle(g2, boxX + 12, boxY + boxH - 4, 3, new Color(75, 65, 55));
+        fillMidpointCircle(g2, boxX + 22, boxY + boxH - 3, 2, new Color(85, 75, 65));
+        fillMidpointCircle(g2, boxX + 38, boxY + boxH - 4, 3, new Color(65, 55, 45));
+
+        // Cute tiny fish silhouette swimming inside!
+        double fishWiggle = Math.sin(st * 8.0) * 2;
+        g2.setColor(new Color(225, 75, 45));
+        int fx = boxX + 26;
+        int fy = boxY + 25 + (int) fishWiggle;
+        fillMidpointEllipse(g2, fx, fy, 4, 2, new Color(225, 75, 45));
+        bresenhamLine(g2, fx - 4, fy, fx - 7, fy - 2, 1);
+        bresenhamLine(g2, fx - 4, fy, fx - 7, fy + 2, 1);
+
+        // Bright Blue Snap-on Vented Lid
+        g2.setColor(new Color(25, 120, 235));
+        g2.fillRoundRect(boxX - 2, boxY + 6, boxW + 4, 8, 4, 4);
+        g2.setColor(new Color(15, 90, 195));
+        g2.drawRoundRect(boxX - 2, boxY + 6, boxW + 4, 8, 4, 4);
+        // Air vents on lid
+        g2.setColor(new Color(10, 65, 140));
+        for (int vx = boxX + 6; vx < boxX + boxW - 4; vx += 7) {
+            bresenhamLine(g2, vx, boxY + 8, vx + 3, boxY + 8, 0);
+        }
+
+        // Blue Carrying Handle on top
+        g2.setColor(new Color(25, 120, 235));
+        g2.drawRoundRect(boxX + boxW / 2 - 9, boxY, 18, 8, 3, 3);
+
+        // 4. Lush riverbank fern leaves along bottom edges
+        g2.setColor(new Color(45, 135, 55, 230));
+        for (int i = 0; i < 7; i++) {
+            double lx = 10 + i * 16;
+            double ly = 575 - i * 6;
+            bezierCurve(g2, lx, ly, lx + 12, ly - 22, lx + 22, ly - 28, lx + 32, ly - 15, 2);
+        }
+        g2.setColor(new Color(38, 120, 48, 230));
+        for (int i = 0; i < 6; i++) {
+            double rx = 580 - i * 18;
+            double ry = 580 - i * 7;
+            bezierCurve(g2, rx, ry, rx - 14, ry - 20, rx - 24, ry - 26, rx - 34, ry - 14, 2);
+        }
+
+        // 5. Subtle framing vignette
+        Point2D center = new Point2D.Float(300.0f, 300.0f);
+        float radius = 430.0f;
+        float[] dist = {0.0f, 0.70f, 1.0f};
+        Color[] colors = {
+            new Color(0, 0, 0, 0),
+            new Color(10, 30, 15, 25),
+            new Color(5, 20, 10, 110)
+        };
+        RadialGradientPaint vig = new RadialGradientPaint(center, radius, dist, colors);
+        g2.setPaint(vig);
         g2.fillRect(0, 0, 600, 600);
-
-        // Layered foliage makes the scene read as a forest rather than open sky.
-        g2.setColor(new Color(18, 65, 35, 220));
-        g2.fillOval(-80, -45, 260, 190);
-        g2.fillOval(90, -70, 270, 200);
-        g2.fillOval(330, -55, 300, 210);
-        g2.setColor(new Color(35, 112, 52, 230));
-        g2.fillOval(-55, 70, 230, 190);
-        g2.fillOval(170, 35, 220, 175);
-        g2.fillOval(390, 60, 260, 190);
-
-        // Tall trunks and branches frame the children like the reference image.
-        g2.setColor(new Color(72, 52, 34));
-        g2.fillRect(28, 70, 32, 330);
-        g2.fillRect(540, 55, 36, 345);
-        g2.setColor(new Color(92, 66, 40));
-        g2.fillRect(175, 95, 22, 300);
-        g2.fillRect(430, 80, 25, 315);
-        g2.setColor(new Color(20, 82, 39, 240));
-        g2.fillOval(-35, 35, 150, 125);
-        g2.fillOval(500, 15, 165, 140);
-
-        // Dappled sunlight filtering through the canopy.
-        for (int i = 0; i < 18; i++) {
-            int gx = 25 + (i * 71) % 570;
-            int gy = 25 + (i * 43) % 260;
-            fillMidpointCircle(g2, gx, gy, 3 + (i % 3), new Color(220, 245, 125, 80));
-        }
-
-        // Rocky banks and the shallow stream from the reference composition.
-        g2.setColor(new Color(85, 103, 76));
-        g2.fillOval(-45, waterY - 40, 160, 58);
-        g2.fillOval(475, waterY - 45, 170, 65);
-        g2.fillOval(80, waterY - 30, 95, 38);
-        g2.fillOval(390, waterY - 25, 110, 40);
-        g2.setColor(new Color(42, 145, 180));
-        g2.fillRect(0, waterY + 2, 600, 230);
-        g2.setColor(new Color(95, 215, 238, 180));
-        for (int i = 0; i < 9; i++) {
-            double wave = Math.sin(st * 2.5 + i * 0.8) * 8;
-            bezierCurve(g2, 20 + i * 72, waterY + 45 + i % 3 * 45,
-                    45 + i * 72, waterY + 32 + wave + i % 3 * 45,
-                    75 + i * 72, waterY + 58 - wave + i % 3 * 45,
-                    105 + i * 72, waterY + 43 + i % 3 * 45, 2);
-        }
-
-        // Draw the friends already standing in the stream first. The water surface
-        // is drawn over their lower bodies so they read as being waist-deep.
-        drawStreamFriend(g2, 105, waterY, 0, new Color(245, 100, 85), st);
-        drawStreamFriend(g2, 235, waterY, 1, new Color(255, 205, 65), st);
-        drawStreamFriend(g2, 365, waterY, 2, new Color(105, 115, 240), st);
-
-        drawStreamSurface(g2, waterY, st);
-
-        // Foreground stones give the stream depth and keep the composition close
-        // to the rocky creek in the reference.
-        g2.setColor(new Color(58, 88, 78));
-        g2.fillOval(-45, 525, 170, 82);
-        g2.fillOval(455, 515, 185, 95);
-        g2.setColor(new Color(112, 145, 117, 180));
-        g2.fillOval(8, 535, 80, 24);
-        g2.fillOval(505, 530, 92, 28);
-
-        // The fourth friend is in front of the water while jumping into it.
-        drawStreamFriend(g2, 505, waterY, 3, new Color(235, 105, 175), st);
     }
 
-    private void drawStreamSurface(Graphics2D g2, int waterY, double st) {
-        // Translucent foreground water hides the submerged legs and creates a
-        // clear waterline across the friends' waists.
-        g2.setColor(new Color(35, 155, 205, 225));
-        g2.fillRect(0, waterY - 4, 600, 230);
+    // Master Scene 4 Renderer: Childhood friends playing in a forest stream
+    private void drawStreamScene(Graphics2D g2, double st) {
+        final int waterY = 360;
 
-        g2.setColor(new Color(185, 245, 255, 210));
-        for (int i = 0; i < 12; i++) {
-            double x = 18 + i * 54;
-            double y = waterY + 4 + (i % 3) * 10;
-            double wave = Math.sin(st * 3.0 + i) * 5;
-            bezierCurve(g2, x - 16, y, x - 7, y - 3 + wave,
-                    x + 7, y + 3 - wave, x + 16, y, 2);
-        }
+        // 1. Draw static layered forest backdrop
+        if (streamBackdrop == null) streamBackdrop = buildStreamBackdrop();
+        g2.drawImage(streamBackdrop, 0, 0, null);
 
-        // Ripples around the three friends who are standing in the stream.
-        for (int x : new int[]{105, 235, 365}) {
-            bezierCurve(g2, x - 28, waterY + 10, x - 14, waterY + 4,
-                    x + 14, waterY + 4, x + 28, waterY + 10, 2);
-        }
-    }
+        // 2. Animated God Rays & Floating Sunlight Dust
+        drawSunbeams(g2, st);
 
-    private void drawStreamFriend(Graphics2D g2, int x, int waterY, int action,
-                                  Color shirtColor, double st) {
-        final Color ink = new Color(35, 45, 55);
-        double actionTime = st + action * 0.55;
-        double bob = Math.sin(actionTime * 4.0) * 3.0;
-        boolean jumping = action == 3;
-        double jump = jumping ? Math.max(0, Math.sin(st * 2.2 + 0.4)) * 70 : 0;
-        int hipY = (int) (waterY - 5 - bob - jump);
-        int shoulderY = hipY - 62;
-        int headY = shoulderY - 24;
+        // 3. Clear Riverbed & Underwater Pebbles
+        drawRiverbed(g2, waterY);
 
-        g2.setColor(new Color(35, 125, 175, 120));
-        if (action == 0) {
-            // Water thrown toward the next friend.
-            for (int i = 0; i < 7; i++) {
-                double p = i / 6.0;
-                int dx = (int) (18 + p * 72);
-                int dy = (int) (shoulderY + 12 - 42 * Math.sin(p * Math.PI) + bob);
-                fillMidpointCircle(g2, x + dx, dy, 2 + (i % 2), new Color(225, 250, 255, 220));
-            }
-        }
+        // 4. Draw Friends (Their lower bodies are placed in the riverbed)
+        drawSplashingFriend1(g2, 130, waterY, st);
+        drawBucketFriend2(g2, 270, waterY, st);
+        drawLaughingFriend3(g2, 370, waterY, st);
+        drawNetFriend4(g2, 490, waterY, st);
 
-        g2.setColor(ink);
-        // Body and legs remain in the same simple stickman style as the memories.
-        bresenhamLine(g2, x, shoulderY, x, hipY, 2);
-        int leftFootY = (int) (waterY + 2 - (jumping ? jump * 0.85 : 0));
-        int rightFootY = (int) (waterY + 2 - (jumping ? jump * 0.75 : 0));
-        int leftFootX = x - 18 - (jumping ? 8 : 0);
-        int rightFootX = x + 20 + (jumping ? 7 : 0);
-        bresenhamLine(g2, x, hipY, leftFootX, leftFootY, 2);
-        bresenhamLine(g2, x, hipY, rightFootX, rightFootY, 2);
-        fillMidpointCircle(g2, leftFootX, leftFootY, 4, ink);
-        fillMidpointCircle(g2, rightFootX, rightFootY, 4, ink);
+        // 5. Translucent Water Surface, Shimmering Caustics & Expanding Ripples
+        drawWaterSurface(g2, waterY, st);
 
-        int leftHandY = shoulderY + 12;
-        int rightHandY = shoulderY + 12;
-        if (action == 0) { // throwing water
-            rightHandY = shoulderY - 8;
-        } else if (action == 2) { // celebrating with both hands raised
-            leftHandY = shoulderY - 38;
-            rightHandY = shoulderY - 45;
-        } else if (action == 3) { // arms up during the jump
-            leftHandY = shoulderY - 28;
-            rightHandY = shoulderY - 35;
-        }
-        bresenhamLine(g2, x, shoulderY + 5, x - 28, leftHandY, 2);
-        bresenhamLine(g2, x, shoulderY + 5, x + 28, rightHandY, 2);
-        fillMidpointCircle(g2, x - 28, leftHandY, 4, ink);
-        fillMidpointCircle(g2, x + 28, rightHandY, 4, ink);
+        // 6. Dynamic Water Splashes, Sheets, Droplets, and Spray Physics
+        drawWaterSplashesAndSpray(g2, st);
 
-        // Shirt and head are drawn over the stick lines for a readable silhouette.
-        g2.setColor(shirtColor);
-        g2.fillOval(x - 13, shoulderY - 2, 26, 38);
-        g2.setColor(new Color(255, 224, 185));
-        g2.fillOval(x - 18, headY - 18, 36, 36);
-        g2.setColor(ink);
-        midpointCircle(g2, x, headY, 18);
-
-        // Smiling face: eyes and a curved laughing mouth.
-        g2.fillOval(x - 8, headY - 4, 3, 4);
-        g2.fillOval(x + 5, headY - 4, 3, 4);
-        bezierCurve(g2, x - 8, headY + 7, x - 3, headY + 14,
-                    x + 4, headY + 14, x + 9, headY + 7, 2);
-
-        if (jumping) {
-            // The jumper lands into the stream at the bottom of the looped motion.
-            double splash = Math.max(0, Math.sin(st * 2.2 + Math.PI / 2));
-            for (int i = 0; i < 10; i++) {
-                double angle = Math.PI * (0.1 + 0.8 * i / 9.0);
-                int sx = x + (int) (Math.cos(angle) * (18 + splash * 24));
-                int sy = waterY + 5 - (int) (Math.sin(angle) * (18 + splash * 24));
-                fillMidpointCircle(g2, sx, sy, 2 + i % 2, new Color(235, 252, 255, 220));
-            }
-        }
+        // 7. Foreground Boulders, Critter Box, and Lush Riverbank Foliage
+        drawForegroundProps(g2, st);
     }
 
     // ==================================================================
