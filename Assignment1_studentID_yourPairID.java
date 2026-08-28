@@ -390,6 +390,39 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         plotPixel(g, xc + x, yc + y);
     }
 
+    /** Lab_04 midpoint ellipse outline, plotted one pixel wide for a clean seam. */
+    private void midpointEllipseThin(Graphics g, int xc, int yc, int a, int b) {
+        if (a <= 0 || b <= 0) return;
+        int a2 = a * a, b2 = b * b;
+        int twoA2 = 2 * a2, twoB2 = 2 * b2;
+
+        int x = 0, y = b;
+        int D = (int) Math.round(b2 - (a2 * b) + (a2 / 4.0));
+        int Dx = 0, Dy = twoA2 * y;
+        while (Dx <= Dy) {
+            plot4Thin(g, xc, yc, x, y);
+            x++; Dx += twoB2; D += Dx + b2;
+            if (D >= 0) { y--; Dy -= twoA2; D -= Dy; }
+        }
+
+        x = a; y = 0;
+        D = (int) Math.round(a2 - (b2 * a) + (b2 / 4.0));
+        Dx = twoB2 * x; Dy = 0;
+        while (Dx >= Dy) {
+            plot4Thin(g, xc, yc, x, y);
+            y++; Dy += twoA2; D += Dy + a2;
+            if (D >= 0) { x--; Dx -= twoB2; D -= Dx; }
+        }
+    }
+
+    private void plot4Thin(Graphics g, int xc, int yc, int x, int y) {
+        g.fillRect(xc + x, yc - y, 1, 1);
+        g.fillRect(xc - x, yc - y, 1, 1);
+        g.fillRect(xc - x, yc + y, 1, 1);
+        g.fillRect(xc + x, yc + y, 1, 1);
+    }
+
+
     // Lab_03: Flood Fill Algorithm (Queue-based 4-connected)
     public BufferedImage floodFill(BufferedImage m, int x, int y, Color target_colour, Color replacement_colour) {
         int targetRGB = target_colour.getRGB();
@@ -2184,17 +2217,9 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         g2.fillOval(foot1X - 5, foot1Y - 3, 11, 6);
         g2.fillOval(foot2X - 5, foot2Y - 3, 11, 6);
 
-        // Simple Navy Shorts
-        g2.setColor(new Color(35, 55, 110));
-        fillMidpointEllipse(g2, torsoHipX + 2, hipY + 1, 11, 7, new Color(35, 55, 110));
-
-        // 2. Stick Torso & Simple Red Shirt
+        // 2. Stick Torso (plain stickman, no clothing)
         g2.setColor(INK);
         bresenhamLine(g2, torsoShX, shoulderY, torsoHipX, hipY, t2);
-
-        // Simple Red Shirt
-        g2.setColor(new Color(230, 45, 45));
-        fillMidpointEllipse(g2, (torsoShX + torsoHipX) / 2 + 1, (shoulderY + hipY) / 2, 10, 15, new Color(230, 45, 45));
 
         // 3. Stick Arms: Scooping and splashing water
         int armThrowX = (int) (torsoShX + 20 + scoop * 14);
@@ -2249,17 +2274,9 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         bresenhamLine(g2, x, hipY, x - 8, waterY + 12, t2);
         bresenhamLine(g2, x, hipY, x + 9, waterY + 12, t2);
 
-        // Simple Olive Shorts
-        g2.setColor(new Color(55, 75, 50));
-        fillMidpointEllipse(g2, x, hipY + 1, 10, 6, new Color(55, 75, 50));
-
-        // 2. Stick Torso & Simple Green Shirt
+        // 2. Stick Torso (plain stickman, no clothing)
         g2.setColor(INK);
         bresenhamLine(g2, x, shoulderY, x, hipY, t2);
-
-        // Simple Green Shirt
-        g2.setColor(new Color(45, 155, 65));
-        fillMidpointEllipse(g2, x, (shoulderY + hipY) / 2, 9, 14, new Color(45, 155, 65));
 
         // 3. Stick Arms: Cheering and splashing with both hands raised high (Bare hands, no props)
         double armWaveL = Math.sin(st * 6.0) * 4;
@@ -2318,17 +2335,9 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         bresenhamLine(g2, knee2X, knee2Y, foot2X, foot2Y, t2);
         g2.fillOval(foot2X - 4, foot2Y - 3, 10, 6);
 
-        // Simple Khaki Shorts
-        g2.setColor(new Color(165, 145, 95));
-        fillMidpointEllipse(g2, x, hipY, 12, 8, new Color(165, 145, 95));
-
-        // 2. Stick Torso & Simple Blue Shirt
+        // 2. Stick Torso (plain stickman, no clothing)
         g2.setColor(INK);
         bresenhamLine(g2, x, shoulderY, x, hipY, t2);
-
-        // Simple Blue Shirt
-        g2.setColor(new Color(45, 105, 220));
-        fillMidpointEllipse(g2, x, (shoulderY + hipY) / 2, 9, 13, new Color(45, 105, 220));
 
         // 3. Stick Arms thrown up in excitement receiving splash
         int armWaveL = (int) (Math.sin(st * 7.0) * 5);
@@ -2360,70 +2369,182 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         bezierCurve(g2, x - 6, headY + 3, x - 1, headY + 8, x + 3, headY + 8, x + 7, headY + 3);
     }
 
-    // Friend 4 (Right): Stickman in Yellow shirt - Stepping and cheering with bare hands!
-    private void drawNetFriend4(Graphics2D g2, int x, int waterY, double st) {
+    // ---- Friend 4 (Right): runs off the bank and cannonballs into the stream ----
+    // One full leap-and-splash cycle, repeated for the length of the scene.
+    static final double JUMP_CYCLE  = 2.6;   // seconds for one complete leap
+    static final double JUMP_CROUCH = 0.16;  // fraction of the cycle spent winding up
+    static final double JUMP_LAND   = 0.62;  // fraction at which he breaks the surface
+
+    private double jumpPhase(double st) {
+        return (st % JUMP_CYCLE) / JUMP_CYCLE;
+    }
+
+    private void drawJumpingFriend4(Graphics2D g2, int x, int waterY, double st) {
         int t2 = 2;
         int headR = 15;
+        double jp = jumpPhase(st);
 
-        // Cheerful step bounce
-        double step = Math.sin(st * 3.0) * 3.0;
-        int hipY = (int) (waterY - 20 + step);
+        int standY = waterY - 4;   // bank level his feet start from
+        double lift = 0;           // height above the bank
+        double tuck = 0;           // 0 = stretched out, 1 = full cannonball tuck
+        double drift = 0;          // travels left, out over the water
+
+        if (jp < JUMP_CROUCH) {
+            // wind up: compress down before launching
+            double c = jp / JUMP_CROUCH;
+            lift = -11 * Math.sin(Math.PI * c);
+        } else if (jp < JUMP_LAND) {
+            double au = (jp - JUMP_CROUCH) / (JUMP_LAND - JUMP_CROUCH);
+            lift = Math.sin(Math.PI * au) * 150;   // parabolic arc
+            tuck = Math.sin(Math.PI * au);         // knees come up at the apex
+            drift = -38 * au;                      // carries out over the stream
+        } else {
+            // plunges right under the surface, then bobs back up toward the bank
+            double su = (jp - JUMP_LAND) / (1 - JUMP_LAND);
+            lift = -95 * Math.sin(Math.PI * Math.min(1.0, su * 1.15));
+            tuck = Math.max(0, 1 - su * 3);
+            drift = -38 * (1 - smoothStep(su));
+        }
+
+        int cx = (int) (x + drift);
+        int hipY = (int) (standY - lift);
         int shoulderY = hipY - 30;
         int headY = shoulderY - 20;
 
-        // 1. Stick Legs: One planted on shallow stone, other knee lifted
         g2.setColor(INK);
-        int plantX = x - 10, plantY = waterY + 4;
-        bresenhamLine(g2, x, hipY, plantX + 2, waterY - 8, t2);
-        bresenhamLine(g2, plantX + 2, waterY - 8, plantX, plantY, t2);
-        g2.fillOval(plantX - 5, plantY - 3, 11, 6);
 
-        int stepKneeX = x + 12, stepKneeY = hipY + 10;
-        int stepFootX = x + 18, stepFootY = waterY - 6;
-        bresenhamLine(g2, x, hipY, stepKneeX, stepKneeY, t2);
-        bresenhamLine(g2, stepKneeX, stepKneeY, stepFootX, stepFootY, t2);
-        g2.fillOval(stepFootX - 5, stepFootY - 3, 11, 6);
+        // 1. Legs - tuck toward the chest at the top of the jump
+        int kneeLift = (int) (tuck * 26);
+        int kneeAX = cx - 13, kneeAY = hipY + 22 - kneeLift;
+        int footAX = cx - 6, footAY = kneeAY + 20 - (int) (tuck * 16);
+        bresenhamLine(g2, cx, hipY, kneeAX, kneeAY, t2);
+        bresenhamLine(g2, kneeAX, kneeAY, footAX, footAY, t2);
+        g2.fillOval(footAX - 5, footAY - 3, 11, 6);
 
-        // Simple Brown Shorts
-        g2.setColor(new Color(135, 80, 45));
-        fillMidpointEllipse(g2, x + 2, hipY + 2, 10, 6, new Color(135, 80, 45));
+        int kneeBX = cx + 14, kneeBY = hipY + 20 - kneeLift;
+        int footBX = cx + 8, footBY = kneeBY + 21 - (int) (tuck * 16);
+        bresenhamLine(g2, cx, hipY, kneeBX, kneeBY, t2);
+        bresenhamLine(g2, kneeBX, kneeBY, footBX, footBY, t2);
+        g2.fillOval(footBX - 5, footBY - 3, 11, 6);
 
-        // 2. Stick Torso & Simple Yellow Shirt
-        g2.setColor(INK);
-        bresenhamLine(g2, x + 2, shoulderY, x, hipY, t2);
+        // 2. Torso (plain stickman, no clothing)
+        bresenhamLine(g2, cx, shoulderY, cx, hipY, t2);
 
-        // Simple Yellow Shirt
-        g2.setColor(new Color(245, 205, 35));
-        fillMidpointEllipse(g2, x + 1, (shoulderY + hipY) / 2, 9, 14, new Color(245, 205, 35));
+        // 3. Arms - flung overhead on the way up, wrapped round the knees when tucked
+        int handAX = (int) (cx - 20 + tuck * 8);
+        int handAY = (int) (shoulderY - 20 + tuck * 44);
+        int handBX = (int) (cx + 21 - tuck * 8);
+        int handBY = (int) (shoulderY - 22 + tuck * 46);
+        bresenhamLine(g2, cx, shoulderY + 3, handAX, handAY, t2);
+        bresenhamLine(g2, cx, shoulderY + 3, handBX, handBY, t2);
+        fillMidpointCircle(g2, handAX, handAY, 3, INK);
+        fillMidpointCircle(g2, handBX, handBY, 3, INK);
 
-        // 3. Stick Arms: Cheering and waving happily with bare hands (No props)
-        double armWaveL = Math.cos(st * 5.0) * 5;
-        double armWaveR = Math.sin(st * 5.0) * 5;
-
-        int hand1X = x - 18, hand1Y = (int) (shoulderY - 18 + armWaveL);
-        int hand2X = x + 20, hand2Y = (int) (shoulderY - 22 + armWaveR);
-
-        bresenhamLine(g2, x + 2, shoulderY + 3, hand1X, hand1Y, t2);
-        bresenhamLine(g2, x + 2, shoulderY + 3, hand2X, hand2Y, t2);
-        fillMidpointCircle(g2, hand1X, hand1Y, 3, INK);
-        fillMidpointCircle(g2, hand2X, hand2Y, 3, INK);
-
-        // 4. Classic Stickman Head & Cheering Face
-        int headX = x + 3;
-        bresenhamLine(g2, headX, headY + headR, x + 2, shoulderY, t2);
+        // 4. Head and a delighted, wide-open shout
+        bresenhamLine(g2, cx, headY + headR, cx, shoulderY, t2);
         g2.setColor(Color.WHITE);
-        g2.fillOval(headX - headR, headY - headR, headR * 2, headR * 2);
+        g2.fillOval(cx - headR, headY - headR, headR * 2, headR * 2);
         g2.setColor(INK);
-        midpointCircle(g2, headX, headY, headR);
+        midpointCircle(g2, cx, headY, headR);
 
-        // Simple hair tufts
-        bresenhamLine(g2, headX - 4, headY - headR, headX - 8, headY - headR - 6, 1);
-        bresenhamLine(g2, headX + 3, headY - headR, headX + 5, headY - headR - 7, 1);
+        // hair blown upward by the fall
+        bresenhamLine(g2, cx - 4, headY - headR, cx - 8, headY - headR - 7, 1);
+        bresenhamLine(g2, cx + 1, headY - headR, cx + 1, headY - headR - 9, 1);
+        bresenhamLine(g2, cx + 6, headY - headR, cx + 10, headY - headR - 6, 1);
 
-        // Cheerful face (Two dots & excited smile)
-        g2.fillOval(headX - 4, headY - 4, 3, 4);
-        g2.fillOval(headX + 4, headY - 4, 3, 4);
-        bezierCurve(g2, headX - 5, headY + 3, headX, headY + 8, headX + 3, headY + 8, headX + 6, headY + 3);
+        boolean airborne = jp >= JUMP_CROUCH && jp < JUMP_LAND;
+        if (airborne) {
+            // squeezed-shut eyes and an open yell mid-flight
+            bezierCurve(g2, cx - 9, headY - 4, cx - 6, headY - 8, cx - 3, headY - 8, cx - 1, headY - 4);
+            bezierCurve(g2, cx + 2, headY - 4, cx + 5, headY - 8, cx + 8, headY - 8, cx + 10, headY - 4);
+            fillMidpointEllipse(g2, cx + 1, headY + 6, 5, 4, INK);
+        } else {
+            g2.fillOval(cx - 5, headY - 4, 3, 4);
+            g2.fillOval(cx + 3, headY - 4, 3, 4);
+            bezierCurve(g2, cx - 6, headY + 3, cx - 2, headY + 8, cx + 2, headY + 8, cx + 6, headY + 3);
+        }
+    }
+
+    // The cannonball impact: crown of water, flattened surface rings, and flying droplets.
+    // Drawn after the water surface so the spray sits on top of it.
+    private void drawCannonballSplash(Graphics2D g2, int x, int waterY, double st) {
+        double jp = jumpPhase(st);
+        if (jp < JUMP_LAND) return;
+
+        double p = (jp - JUMP_LAND) / (1 - JUMP_LAND);   // 0..1 since impact
+        if (p > 1) return;
+        double fade = Math.max(0.0, 1.0 - p);
+        int impactX = x - 38;                            // where he broke the surface
+
+        // 1. Big central crown of water thrown up by the impact
+        double colU = Math.min(1.0, p * 2.0);
+        double colH = Math.sin(Math.PI * colU) * 165;
+        if (colH > 2) {
+            // solid core of the column
+            fillMidpointEllipse(g2, impactX, (int) (waterY - colH * 0.42), 26, (int) (colH * 0.48),
+                                new Color(240, 252, 255, (int) (170 * fade)));
+            // curved outer walls flaring out into a crown
+            g2.setColor(new Color(255, 255, 255, (int) (225 * fade)));
+            for (int side = -1; side <= 1; side += 2) {
+                for (int w = 0; w < 3; w++) {
+                    double flare = 1.0 + w * 0.55;
+                    bezierCurve(g2,
+                        impactX + side * (10 + w * 5), waterY,
+                        impactX + side * (34 * flare), waterY - colH * 0.40,
+                        impactX + side * (26 * flare), waterY - colH * 0.80,
+                        impactX + side * (14 * flare + w * 10), waterY - colH * (0.95 - w * 0.15));
+                }
+            }
+        }
+
+        // 2. Flattened rings racing outward across the surface.
+        //    The midpoint circle is squashed by a scale transform (Lab_06) into an ellipse.
+        AffineTransform keep = g2.getTransform();
+        g2.translate(impactX, waterY);
+        g2.scale(1.0, 0.30);
+        for (int i = 0; i < 4; i++) {
+            double rp = p + i * 0.16;
+            if (rp <= 0 || rp >= 1) continue;
+            int r = (int) (rp * 300);
+            int a = (int) (210 * (1 - rp) * fade);
+            if (r > 4 && a > 4) {
+                g2.setColor(new Color(255, 255, 255, a));
+                midpointCircle(g2, 0, 0, r);
+            }
+        }
+        g2.setTransform(keep);
+
+        // 3. Sheets of water flung sideways along the surface
+        g2.setColor(new Color(250, 254, 255, (int) (200 * fade)));
+        double sheet = Math.min(1.0, p * 1.8);
+        for (int side = -1; side <= 1; side += 2) {
+            double reach = 150 * sheet;
+            bezierCurve(g2,
+                impactX + side * 12, waterY,
+                impactX + side * (reach * 0.4), waterY - 55 * (1 - sheet * 0.5),
+                impactX + side * (reach * 0.75), waterY - 30 * (1 - sheet),
+                impactX + side * reach, waterY + 4);
+        }
+
+        // 4. Droplets hurled out on parabolic arcs
+        Random dr = new Random(31);
+        for (int i = 0; i < 46; i++) {
+            double ang = Math.toRadians(195 + dr.nextDouble() * 150);  // fan upward
+            double speed = 130 + dr.nextDouble() * 260;
+            double life = 0.5 + dr.nextDouble() * 0.5;
+            double dp = p / life;
+            if (dp > 1) continue;
+
+            double dx = Math.cos(ang) * speed * dp;
+            double dy = Math.sin(ang) * speed * dp + 210 * dp * dp;   // gravity pulls them back
+            int px = (int) (impactX + dx);
+            int py = (int) (waterY + dy);
+            if (py > waterY + 6) continue;                            // has fallen back in
+
+            int rr = 2 + dr.nextInt(4);
+            int a = (int) (245 * (1 - dp));
+            fillMidpointCircle(g2, px, py, rr, new Color(245, 253, 255, Math.max(0, a)));
+        }
     }
 
     // Dynamic Multi-layered Water Splashes, Smooth Curved Arcs, and Droplet Spray Physics
@@ -2598,13 +2719,16 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         drawSplashingFriend1(g2, 130, waterY, st);
         drawBucketFriend2(g2, 270, waterY, st);
         drawLaughingFriend3(g2, 370, waterY, st);
-        drawNetFriend4(g2, 490, waterY, st);
+        drawJumpingFriend4(g2, 505, waterY, st);
 
         // 5. Translucent Water Surface, Shimmering Caustics & Expanding Ripples
         drawWaterSurface(g2, waterY, st);
 
         // 6. Dynamic Water Splashes, Sheets, Droplets, and Spray Physics
         drawWaterSplashesAndSpray(g2, st);
+
+        // 6b. The cannonball impact, on top of the surface so the spray reads clearly
+        drawCannonballSplash(g2, 505, waterY, st);
 
         // 7. Foreground Boulders, Critter Box, and Lush Riverbank Foliage
         drawForegroundProps(g2, st);
@@ -3027,41 +3151,13 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     }
 
     // Helper: Draws styled spiky anime hair on crown/back leaving face clean & cute
-    private void drawAnimeSpikyHair(Graphics2D g2, int hx, int hy, int r, Color hairColor) {
-        g2.setColor(hairColor);
-        // Hair cap on top crown
-        fillMidpointEllipse(g2, hx, hy - r + 4, r + 3, 8, hairColor);
-
-        // Anime Spikes on top and sides
-        int[] sp1x = {hx - r + 1, hx - r + 7, hx - r - 5};
-        int[] sp1y = {hy - r + 4, hy - r + 2, hy - r - 7};
-        g2.fillPolygon(sp1x, sp1y, 3);
-
-        int[] sp2x = {hx - 6, hx + 3, hx - 2};
-        int[] sp2y = {hy - r + 3, hy - r + 2, hy - r - 10};
-        g2.fillPolygon(sp2x, sp2y, 3);
-
-        int[] sp3x = {hx + 2, hx + r - 2, hx + 7};
-        int[] sp3y = {hy - r + 3, hy - r + 4, hy - r - 9};
-        g2.fillPolygon(sp3x, sp3y, 3);
-
-        int[] sp4x = {hx + r - 4, hx + r + 2, hx + r + 6};
-        int[] sp4y = {hy - r + 6, hy - r + 8, hy - r - 4};
-        g2.fillPolygon(sp4x, sp4y, 3);
-
-        // Side tufts
-        int[] sp5x = {hx - r, hx - r + 3, hx - r - 5};
-        int[] sp5y = {hy - 2, hy + 5, hy + 2};
-        g2.fillPolygon(sp5x, sp5y, 3);
-
-        int[] sp6x = {hx + r, hx + r - 3, hx + r + 5};
-        int[] sp6y = {hy - 2, hy + 5, hy + 2};
-        g2.fillPolygon(sp6x, sp6y, 3);
-
-        // Front fringe bangs framing forehead
-        bresenhamLine(g2, hx - 7, hy - r + 5, hx - 4, hy - r + 10, 2);
-        bresenhamLine(g2, hx, hy - r + 5, hx + 1, hy - r + 11, 2);
-        bresenhamLine(g2, hx + 6, hy - r + 5, hx + 7, hy - r + 10, 2);
+    /** Three plain hair strands on the crown - the same simple stickman
+     *  head the other memory scenes use, with no helmet or hair cap. */
+    private void drawStickHair(Graphics2D g2, int hx, int hy, int r) {
+        g2.setColor(INK);
+        bresenhamLine(g2, hx - 5, hy - r + 2, hx - 10, hy - r - 8, 1);
+        bresenhamLine(g2, hx + 1, hy - r, hx + 1, hy - r - 11, 1);
+        bresenhamLine(g2, hx + 7, hy - r + 2, hx + 12, hy - r - 8, 1);
     }
 
     // Friend 1 (Left Foreground): Red Hoodie - Laughing together with Friend 3
@@ -3085,39 +3181,27 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         // 1. Legs (Dark charcoal pants pumping on pedals)
         int leftKneeX = (int) (x - 18 * scale);
         int leftKneeY = (hipY + leftFootY) / 2 - (int) (4 * scale);
-        g2.setColor(new Color(50, 52, 60));
-        bresenhamLine(g2, (int)(x - 10 * scale), hipY, leftKneeX, leftKneeY, 5);
-        bresenhamLine(g2, leftKneeX, leftKneeY, (int)(x - crankW - 4 * scale), leftFootY, 4);
-        fillMidpointEllipse(g2, (int)(x - crankW - 4 * scale), leftFootY, (int)(8 * scale), (int)(4 * scale), new Color(245, 245, 248));
-        fillMidpointCircle(g2, (int)(x - crankW - 2 * scale), leftFootY, (int)(2 * scale), new Color(245, 115, 35)); // Orange trim
+        g2.setColor(INK);
+        bresenhamLine(g2, (int)(x - 10 * scale), hipY, leftKneeX, leftKneeY, 2);
+        bresenhamLine(g2, leftKneeX, leftKneeY, (int)(x - crankW - 4 * scale), leftFootY, 2);
+        fillMidpointEllipse(g2, (int)(x - crankW - 4 * scale), leftFootY, (int)(7 * scale), (int)(4 * scale), INK);
 
         int rightKneeX = (int) (x + 18 * scale);
         int rightKneeY = (hipY + rightFootY) / 2 - (int) (4 * scale);
-        g2.setColor(new Color(50, 52, 60));
-        bresenhamLine(g2, (int)(x + 10 * scale), hipY, rightKneeX, rightKneeY, 5);
-        bresenhamLine(g2, rightKneeX, rightKneeY, (int)(x + crankW + 4 * scale), rightFootY, 4);
-        fillMidpointEllipse(g2, (int)(x + crankW + 4 * scale), rightFootY, (int)(8 * scale), (int)(4 * scale), new Color(245, 245, 248));
-        fillMidpointCircle(g2, (int)(x + crankW + 6 * scale), rightFootY, (int)(2 * scale), new Color(245, 115, 35));
+        g2.setColor(INK);
+        bresenhamLine(g2, (int)(x + 10 * scale), hipY, rightKneeX, rightKneeY, 2);
+        bresenhamLine(g2, rightKneeX, rightKneeY, (int)(x + crankW + 4 * scale), rightFootY, 2);
+        fillMidpointEllipse(g2, (int)(x + crankW + 4 * scale), rightFootY, (int)(7 * scale), (int)(4 * scale), INK);
 
-        // 2. Torso: Vibrant Red Hoodie & Backpack
-        fillMidpointEllipse(g2, (int)(x - 15 * scale), shoulderY + (int)(10 * scale), (int)(10 * scale), (int)(16 * scale), new Color(35, 38, 45));
-
-        g2.setColor(new Color(225, 42, 42));
-        fillMidpointEllipse(g2, (int) x, (shoulderY + hipY) / 2, (int)(20 * scale), (int)(25 * scale), new Color(225, 42, 42));
-        // White Chest Block Graphic
-        g2.setColor(new Color(248, 248, 252));
-        g2.fillRect((int)(x - 10 * scale), (shoulderY + hipY) / 2 - (int)(8 * scale), (int)(20 * scale), (int)(10 * scale));
-        // White Hoodie Cords
-        g2.setColor(new Color(250, 250, 250));
-        bresenhamLine(g2, (int)(x - 4 * scale), shoulderY + (int)(4 * scale), (int)(x - 6 * scale), shoulderY + (int)(18 * scale), 1);
-        bresenhamLine(g2, (int)(x + 4 * scale), shoulderY + (int)(4 * scale), (int)(x + 6 * scale), shoulderY + (int)(18 * scale), 1);
+        // 2. Bare stickman torso
+        g2.setColor(INK);
+        bresenhamLine(g2, (int) x, shoulderY, (int) x, hipY, 2);
 
         // 3. Head & Joyful Anime Face (Turned slightly right toward Friend 3)
-        g2.setColor(new Color(215, 38, 38));
-        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 4);
+        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 2);
 
         fillMidpointCircle(g2, headX, headY, headR, Color.WHITE);
-        drawAnimeSpikyHair(g2, headX, headY, headR, new Color(28, 30, 35));
+        drawStickHair(g2, headX, headY, headR);
         g2.setColor(INK);
         midpointCircle(g2, headX, headY, headR);
 
@@ -3141,9 +3225,9 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int gripX1 = (int) (x - 34 * scale);
         int gripX2 = (int) (x + 34 * scale);
         int gripY = (int) (y - 80 * scale);
-        g2.setColor(new Color(215, 38, 38));
-        bresenhamLine(g2, (int)(x - 16 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 5);
-        bresenhamLine(g2, (int)(x + 16 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 5);
+        g2.setColor(INK);
+        bresenhamLine(g2, (int)(x - 16 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 2);
+        bresenhamLine(g2, (int)(x + 16 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 2);
         fillMidpointCircle(g2, gripX1, gripY, (int)(3 * scale), new Color(255, 220, 185));
         fillMidpointCircle(g2, gripX2, gripY, (int)(3 * scale), new Color(255, 220, 185));
 
@@ -3169,24 +3253,21 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int leftFootY = bbY + (int) (Math.sin(pedalAngle) * (14 * scale));
         int rightFootY = bbY - (int) (Math.sin(pedalAngle) * (14 * scale));
 
-        // 1. Legs (Navy pants)
-        g2.setColor(new Color(42, 50, 65));
-        bresenhamLine(g2, (int)(x - 10 * scale), hipY, (int)(x - 16 * scale), (hipY + leftFootY) / 2, 4);
-        bresenhamLine(g2, (int)(x - 16 * scale), (hipY + leftFootY) / 2, (int)(x - crankW - 4 * scale), leftFootY, 3);
-        bresenhamLine(g2, (int)(x + 10 * scale), hipY, (int)(x + 16 * scale), (hipY + rightFootY) / 2, 4);
-        bresenhamLine(g2, (int)(x + 16 * scale), (hipY + rightFootY) / 2, (int)(x + crankW + 4 * scale), rightFootY, 3);
+        // 1. Legs (bare stickman)
+        g2.setColor(INK);
+        bresenhamLine(g2, (int)(x - 10 * scale), hipY, (int)(x - 16 * scale), (hipY + leftFootY) / 2, 2);
+        bresenhamLine(g2, (int)(x - 16 * scale), (hipY + leftFootY) / 2, (int)(x - crankW - 4 * scale), leftFootY, 2);
+        bresenhamLine(g2, (int)(x + 10 * scale), hipY, (int)(x + 16 * scale), (hipY + rightFootY) / 2, 2);
+        bresenhamLine(g2, (int)(x + 16 * scale), (hipY + rightFootY) / 2, (int)(x + crankW + 4 * scale), rightFootY, 2);
 
-        // 2. Torso: Cobalt Blue Jacket & Backpack
-        fillMidpointEllipse(g2, (int)(x - 12 * scale), shoulderY + (int)(8 * scale), (int)(8 * scale), (int)(14 * scale), new Color(40, 38, 48));
-        g2.setColor(new Color(38, 78, 155));
-        fillMidpointEllipse(g2, (int) x, (shoulderY + hipY) / 2, (int)(18 * scale), (int)(22 * scale), new Color(38, 78, 155));
+        // 2. Bare stickman torso
+        bresenhamLine(g2, (int) x, shoulderY, (int) x, hipY, 2);
 
         // 3. Head & Brown Hair
-        g2.setColor(new Color(32, 68, 140));
-        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 3);
+        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 2);
 
         fillMidpointCircle(g2, headX, headY, headR, Color.WHITE);
-        drawAnimeSpikyHair(g2, headX, headY, headR, new Color(115, 68, 38));
+        drawStickHair(g2, headX, headY, headR);
         g2.setColor(INK);
         midpointCircle(g2, headX, headY, headR);
 
@@ -3207,9 +3288,9 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int gripX1 = (int) (x - 34 * scale);
         int gripX2 = (int) (x + 34 * scale);
         int gripY = (int) (y - 80 * scale);
-        g2.setColor(new Color(32, 68, 140));
-        bresenhamLine(g2, (int)(x - 14 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 4);
-        bresenhamLine(g2, (int)(x + 14 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 4);
+        g2.setColor(INK);
+        bresenhamLine(g2, (int)(x - 14 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 2);
+        bresenhamLine(g2, (int)(x + 14 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 2);
         fillMidpointCircle(g2, gripX1, gripY, (int)(2 * scale), new Color(255, 220, 185));
         fillMidpointCircle(g2, gripX2, gripY, (int)(2 * scale), new Color(255, 220, 185));
 
@@ -3238,41 +3319,27 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         // 1. Legs (Navy pants & white sneakers)
         int leftKneeX = (int) (x - 19 * scale);
         int leftKneeY = (hipY + leftFootY) / 2 - (int) (4 * scale);
-        g2.setColor(new Color(32, 45, 68));
-        bresenhamLine(g2, (int)(x - 11 * scale), hipY, leftKneeX, leftKneeY, 5);
-        bresenhamLine(g2, leftKneeX, leftKneeY, (int)(x - crankW - 4 * scale), leftFootY, 4);
-        fillMidpointEllipse(g2, (int)(x - crankW - 4 * scale), leftFootY, (int)(9 * scale), (int)(5 * scale), new Color(250, 250, 252));
+        g2.setColor(INK);
+        bresenhamLine(g2, (int)(x - 11 * scale), hipY, leftKneeX, leftKneeY, 2);
+        bresenhamLine(g2, leftKneeX, leftKneeY, (int)(x - crankW - 4 * scale), leftFootY, 2);
+        fillMidpointEllipse(g2, (int)(x - crankW - 4 * scale), leftFootY, (int)(8 * scale), (int)(4 * scale), INK);
 
         int rightKneeX = (int) (x + 19 * scale);
         int rightKneeY = (hipY + rightFootY) / 2 - (int) (4 * scale);
-        g2.setColor(new Color(32, 45, 68));
-        bresenhamLine(g2, (int)(x + 11 * scale), hipY, rightKneeX, rightKneeY, 5);
-        bresenhamLine(g2, rightKneeX, rightKneeY, (int)(x + crankW + 4 * scale), rightFootY, 4);
-        fillMidpointEllipse(g2, (int)(x + crankW + 4 * scale), rightFootY, (int)(9 * scale), (int)(5 * scale), new Color(250, 250, 252));
+        g2.setColor(INK);
+        bresenhamLine(g2, (int)(x + 11 * scale), hipY, rightKneeX, rightKneeY, 2);
+        bresenhamLine(g2, rightKneeX, rightKneeY, (int)(x + crankW + 4 * scale), rightFootY, 2);
+        fillMidpointEllipse(g2, (int)(x + crankW + 4 * scale), rightFootY, (int)(8 * scale), (int)(4 * scale), INK);
 
-        // 2. Torso: Clean White Hoodie & Brown Leather Backpack
-        fillMidpointEllipse(g2, (int)(x - 15 * scale), shoulderY + (int)(10 * scale), (int)(11 * scale), (int)(17 * scale), new Color(85, 52, 28));
-
-        g2.setColor(new Color(248, 248, 252));
-        fillMidpointEllipse(g2, (int) x, (shoulderY + hipY) / 2, (int)(21 * scale), (int)(26 * scale), new Color(248, 248, 252));
-
-        // Bold Blue Number "23" on Chest
-        int numCenterY = (shoulderY + hipY) / 2 - (int)(4 * scale);
-        g2.setColor(new Color(32, 68, 145));
-        g2.setFont(new Font("SansSerif", Font.BOLD, (int)(13 * scale)));
-        g2.drawString("23", (int)(x - 8 * scale), numCenterY + (int)(4 * scale));
-
-        // White Hoodie Cords
-        g2.setColor(new Color(230, 230, 235));
-        bresenhamLine(g2, (int)(x - 5 * scale), shoulderY + (int)(4 * scale), (int)(x - 6 * scale), shoulderY + (int)(18 * scale), 1);
-        bresenhamLine(g2, (int)(x + 5 * scale), shoulderY + (int)(4 * scale), (int)(x + 6 * scale), shoulderY + (int)(18 * scale), 1);
+        // 2. Bare stickman torso
+        g2.setColor(INK);
+        bresenhamLine(g2, (int) x, shoulderY, (int) x, hipY, 2);
 
         // 3. Head & Joyous Laughing Face
-        g2.setColor(new Color(240, 240, 245));
-        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 4);
+        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 2);
 
         fillMidpointCircle(g2, headX, headY, headR, Color.WHITE);
-        drawAnimeSpikyHair(g2, headX, headY, headR, new Color(112, 65, 34));
+        drawStickHair(g2, headX, headY, headR);
         g2.setColor(INK);
         midpointCircle(g2, headX, headY, headR);
 
@@ -3296,9 +3363,9 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int gripX1 = (int) (x - 34 * scale);
         int gripX2 = (int) (x + 34 * scale);
         int gripY = (int) (y - 80 * scale);
-        g2.setColor(new Color(235, 235, 240));
-        bresenhamLine(g2, (int)(x - 17 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 5);
-        bresenhamLine(g2, (int)(x + 17 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 5);
+        g2.setColor(INK);
+        bresenhamLine(g2, (int)(x - 17 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 2);
+        bresenhamLine(g2, (int)(x + 17 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 2);
         fillMidpointCircle(g2, gripX1, gripY, (int)(3 * scale), new Color(255, 220, 185));
         fillMidpointCircle(g2, gripX2, gripY, (int)(3 * scale), new Color(255, 220, 185));
 
@@ -3324,33 +3391,24 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int leftFootY = bbY + (int) (Math.sin(pedalAngle) * (14 * scale));
         int rightFootY = bbY - (int) (Math.sin(pedalAngle) * (14 * scale));
 
-        // 1. Legs (Tan/khaki pants)
-        g2.setColor(new Color(192, 165, 130));
-        bresenhamLine(g2, (int)(x - 10 * scale), hipY, (int)(x - 16 * scale), (hipY + leftFootY) / 2, 4);
-        bresenhamLine(g2, (int)(x - 16 * scale), (hipY + leftFootY) / 2, (int)(x - crankW - 4 * scale), leftFootY, 4);
-        fillMidpointEllipse(g2, (int)(x - crankW - 4 * scale), leftFootY, (int)(8 * scale), (int)(4 * scale), new Color(245, 245, 245));
+        // 1. Legs (bare stickman)
+        g2.setColor(INK);
+        bresenhamLine(g2, (int)(x - 10 * scale), hipY, (int)(x - 16 * scale), (hipY + leftFootY) / 2, 2);
+        bresenhamLine(g2, (int)(x - 16 * scale), (hipY + leftFootY) / 2, (int)(x - crankW - 4 * scale), leftFootY, 2);
+        fillMidpointEllipse(g2, (int)(x - crankW - 4 * scale), leftFootY, (int)(7 * scale), (int)(4 * scale), INK);
 
-        bresenhamLine(g2, (int)(x + 10 * scale), hipY, (int)(x + 16 * scale), (hipY + rightFootY) / 2, 4);
-        bresenhamLine(g2, (int)(x + 16 * scale), (hipY + rightFootY) / 2, (int)(x + crankW + 4 * scale), rightFootY, 4);
-        fillMidpointEllipse(g2, (int)(x + crankW + 4 * scale), rightFootY, (int)(8 * scale), (int)(4 * scale), new Color(245, 245, 245));
+        bresenhamLine(g2, (int)(x + 10 * scale), hipY, (int)(x + 16 * scale), (hipY + rightFootY) / 2, 2);
+        bresenhamLine(g2, (int)(x + 16 * scale), (hipY + rightFootY) / 2, (int)(x + crankW + 4 * scale), rightFootY, 2);
+        fillMidpointEllipse(g2, (int)(x + crankW + 4 * scale), rightFootY, (int)(7 * scale), (int)(4 * scale), INK);
 
-        // 2. Torso: Green Hoodie & Dark Backpack
-        fillMidpointEllipse(g2, (int)(x + 13 * scale), shoulderY + (int)(9 * scale), (int)(9 * scale), (int)(15 * scale), new Color(38, 45, 40));
-
-        g2.setColor(new Color(42, 138, 62));
-        fillMidpointEllipse(g2, (int) x, (shoulderY + hipY) / 2, (int)(19 * scale), (int)(24 * scale), new Color(42, 138, 62));
-        // Double White Stripes across chest
-        g2.setColor(new Color(250, 250, 250));
-        int midTy = (shoulderY + hipY) / 2 - (int)(4 * scale);
-        bresenhamLine(g2, (int)(x - 12 * scale), midTy - (int)(3 * scale), (int)(x + 12 * scale), midTy - (int)(3 * scale), 1);
-        bresenhamLine(g2, (int)(x - 12 * scale), midTy + (int)(1 * scale), (int)(x + 12 * scale), midTy + (int)(1 * scale), 1);
+        // 2. Bare stickman torso
+        bresenhamLine(g2, (int) x, shoulderY, (int) x, hipY, 2);
 
         // 3. Head & Dark Navy Hair (Turned left watching Friend 3)
-        g2.setColor(new Color(36, 122, 54));
-        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 3);
+        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 2);
 
         fillMidpointCircle(g2, headX, headY, headR, Color.WHITE);
-        drawAnimeSpikyHair(g2, headX, headY, headR, new Color(25, 28, 38));
+        drawStickHair(g2, headX, headY, headR);
         g2.setColor(INK);
         midpointCircle(g2, headX, headY, headR);
 
@@ -3371,9 +3429,9 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int gripX1 = (int) (x - 34 * scale);
         int gripX2 = (int) (x + 34 * scale);
         int gripY = (int) (y - 80 * scale);
-        g2.setColor(new Color(36, 122, 54));
-        bresenhamLine(g2, (int)(x - 15 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 4);
-        bresenhamLine(g2, (int)(x + 15 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 4);
+        g2.setColor(INK);
+        bresenhamLine(g2, (int)(x - 15 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 2);
+        bresenhamLine(g2, (int)(x + 15 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 2);
         fillMidpointCircle(g2, gripX1, gripY, (int)(3 * scale), new Color(255, 220, 185));
         fillMidpointCircle(g2, gripX2, gripY, (int)(3 * scale), new Color(255, 220, 185));
 
@@ -4885,7 +4943,6 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         drawSauceBowl(g2, 388, 452);
 
         // 6. Iced Cola Glasses with Ice & Bear Logo
-        drawIcedDrinkGlass(g2, 60, 435, st);
         drawIcedDrinkGlass(g2, 545, 455, st + 0.5);
     }
 
@@ -4954,28 +5011,21 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int headX = shoulderX + 8;
         int headY = shoulderY - 26;
 
+
         // 1. Legs (Sitting behind table)
         g2.setColor(INK);
         bresenhamLine(g2, hipX, hipY, hipX - 14, hipY + 36, t2);
         bresenhamLine(g2, hipX - 14, hipY + 36, hipX - 14, hipY + 70, t2);
         g2.fillOval(hipX - 20, hipY + 66, 14, 7);
 
-        // Dark Pants
-        g2.setColor(new Color(40, 42, 50));
-        fillMidpointEllipse(g2, hipX - 2, hipY + 6, 12, 8, new Color(40, 42, 50));
-
-        // 2. Torso & Black Graphic T-Shirt
+        // 2. Torso
         g2.setColor(INK);
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
-        g2.setColor(new Color(25, 25, 28));
-        fillMidpointEllipse(g2, (shoulderX + hipX) / 2, (shoulderY + hipY) / 2, 13, 20, new Color(25, 25, 28));
-        // Red graphic chest print
-        g2.setColor(new Color(225, 45, 55));
-        bresenhamLine(g2, (shoulderX + hipX) / 2 - 6, (shoulderY + hipY) / 2 - 4, (shoulderX + hipX) / 2 + 6, (shoulderY + hipY) / 2 - 4, 1);
 
         // 3. Arms: Left resting on table, Right extending chopsticks to pan dome
         int handLX = x + 10, handLY = tableY + 8;
-        bresenhamLine(g2, shoulderX - 8, shoulderY + 4, handLX, handLY, t2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX - 8, shoulderY + 4, handLX, handLY, 2);
         fillMidpointCircle(g2, handLX, handLY, 3, INK);
 
         // Right arm holding chopsticks reaching to the pan
@@ -4983,7 +5033,9 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int handRY = (int) (tableY - 14 + Math.sin(st * 3.5) * 4);
         int elbowRX = (shoulderX + handRX) / 2 + 4;
         int elbowRY = shoulderY + 14;
-        bresenhamLine(g2, shoulderX + 6, shoulderY + 2, elbowRX, elbowRY, t2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX + 6, shoulderY + 2, elbowRX, elbowRY, 2);
+        g2.setColor(INK);
         bresenhamLine(g2, elbowRX, elbowRY, handRX, handRY, t2);
         fillMidpointCircle(g2, handRX, handRY, 3, INK);
 
@@ -5023,29 +5075,23 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int shoulderX = x + 2, shoulderY = tableY - 24;
         int headX = x + 3, headY = (int) (shoulderY - 26 + chew * 0.4);
 
+
         // 1. Torso & White "SUMMER" T-Shirt
         g2.setColor(INK);
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
-        g2.setColor(new Color(250, 250, 252));
-        fillMidpointEllipse(g2, (shoulderX + hipX) / 2, (shoulderY + hipY) / 2, 14, 21, new Color(250, 250, 252));
-        // Cyan Palm Tree / "SUMMER" graphic
-        g2.setColor(new Color(35, 145, 215));
-        fillMidpointCircle(g2, (shoulderX + hipX) / 2, (shoulderY + hipY) / 2 - 5, 4, new Color(35, 145, 215));
-        bezierCurve(g2, (shoulderX + hipX) / 2 - 7, (shoulderY + hipY) / 2 + 3,
-                    (shoulderX + hipX) / 2, (shoulderY + hipY) / 2 - 2,
-                    (shoulderX + hipX) / 2, (shoulderY + hipY) / 2 - 2,
-                    (shoulderX + hipX) / 2 + 7, (shoulderY + hipY) / 2 + 3, 1);
 
         // 2. Arms: Raised in front holding chopsticks with sizzling meat near face!
         int handX = headX + 24;
         int handY = (int) (headY + 6 + chew * 0.6);
 
         // Left arm support
-        bresenhamLine(g2, shoulderX - 10, shoulderY + 4, handX - 10, handY + 12, t2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX - 10, shoulderY + 4, handX - 10, handY + 12, 2);
         fillMidpointCircle(g2, handX - 10, handY + 12, 3, INK);
 
         // Right arm holding chopsticks
-        bresenhamLine(g2, shoulderX + 10, shoulderY + 4, handX, handY, t2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX + 10, shoulderY + 4, handX, handY, 2);
         fillMidpointCircle(g2, handX, handY, 3, INK);
 
         // Chopsticks holding delicious pork bite
@@ -5101,14 +5147,10 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int shoulderX = x - 2, shoulderY = (int) (tableY - 24 - laugh * 0.5);
         int headX = x - 3, headY = (int) (shoulderY - 26 - laugh);
 
+
         // 1. Torso & Royal Blue "GOOD VIBES" T-Shirt
         g2.setColor(INK);
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
-        g2.setColor(new Color(32, 92, 195));
-        fillMidpointEllipse(g2, (shoulderX + hipX) / 2, (shoulderY + hipY) / 2, 14, 21, new Color(32, 92, 195));
-        // White graphic chest text
-        g2.setColor(new Color(245, 245, 255));
-        bresenhamLine(g2, (shoulderX + hipX) / 2 - 6, (shoulderY + hipY) / 2 - 4, (shoulderX + hipX) / 2 + 6, (shoulderY + hipY) / 2 - 4, 1);
 
         // 2. Arms: Left holding sauce bowl, Right holding chopsticks
         int bowlHandX = x - 28, bowlHandY = tableY - 10;
@@ -5159,19 +5201,16 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int shoulderX = x - 6, shoulderY = tableY - 22;
         int headX = shoulderX - 10, headY = tableY - 48;
 
+
         // 1. Torso & Yellow/White "SKATE" T-Shirt
         g2.setColor(INK);
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
-        g2.setColor(new Color(248, 218, 55));
-        fillMidpointEllipse(g2, (shoulderX + hipX) / 2, (shoulderY + hipY) / 2, 13, 20, new Color(248, 218, 55));
-        // Black skateboard icon
-        g2.setColor(new Color(30, 30, 35));
-        bresenhamLine(g2, (shoulderX + hipX) / 2 - 6, (shoulderY + hipY) / 2 - 3, (shoulderX + hipX) / 2 + 6, (shoulderY + hipY) / 2 - 3, 1);
 
         // 2. Arms: Left arm raising iced glass to toast, Right arm on table
-        int toastHandX = (int) (shoulderX - 32);
+        int toastHandX = shoulderX - 32;
         int toastHandY = (int) (shoulderY - 14 + toast);
-        bresenhamLine(g2, shoulderX - 6, shoulderY + 2, toastHandX, toastHandY, t2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX - 6, shoulderY + 2, toastHandX, toastHandY, 2);
         fillMidpointCircle(g2, toastHandX, toastHandY, 3, INK);
 
         // Iced cola glass in raised hand
@@ -5179,7 +5218,8 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
 
         // Right arm resting on table
         int rightHandX = x + 18, rightHandY = tableY + 8;
-        bresenhamLine(g2, shoulderX + 8, shoulderY + 4, rightHandX, rightHandY, t2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX + 8, shoulderY + 4, rightHandX, rightHandY, 2);
         fillMidpointCircle(g2, rightHandX, rightHandY, 3, INK);
 
         // 3. Head & Cheering Face turned towards group
@@ -5230,6 +5270,7 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     }
 
     // Master Scene 6 Renderer: Cozy Thai Moo Kratha Dinner at Home
+    // The pan and the crockery were originally drawn far larger than the people
     private void drawMooKrathaScene(Graphics2D g2, double st) {
         final int tableY = 380;
         final int potX = 300;
@@ -5239,22 +5280,45 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         if (mooKrathaBackdrop == null) mooKrathaBackdrop = buildMooKrathaBackdrop();
         g2.drawImage(mooKrathaBackdrop, 0, 0, null);
 
-        // 2. Side Dishes & Table Props (meat trays, dipping sauce bowls, iced drinks)
-        drawTableFoodDishes(g2, 300, tableY, st);
-
-        // 3. The 4 Stickmen Characters around the table
+        // 2. The 4 Stickmen Characters, drawn first so the table can cover them.
+        //    They are lifted clear of the tabletop line so head, neck and a good
+        //    length of torso stay visible above the tall pan in front of them -
+        //    without shirts to give them bulk they would read as floating heads.
+        final int seatLift = 26;
+        g2.translate(0, -seatLift);
         drawMooKrathaFriend1_Grilling(g2, 115, tableY, st);
         drawMooKrathaFriend2_Eating(g2, 235, tableY, st);
         drawMooKrathaFriend3_SauceLaugh(g2, 365, tableY, st);
         drawMooKrathaFriend4_DrinkCheer(g2, 485, tableY, st);
+        g2.translate(0, seatLift);
 
-        // 4. Centerpiece: Steaming Thai Moo Kratha Pot with sizzling pork & soup moat
+        // 3. The tabletop is repainted over the diners from the near edge down, so
+        //    their lower halves disappear behind it and they read as seated at the
+        //    table rather than standing on top of it.
+        Shape savedClip = g2.getClip();
+        g2.setClip(0, 372, 600, 228);
+        g2.setPaint(new LinearGradientPaint(
+            new Point2D.Float(300, 360), new Point2D.Float(300, 595),
+            new float[]{0.0f, 0.35f, 0.75f, 1.0f},
+            new Color[]{
+                new Color(168, 98, 48),
+                new Color(138, 78, 38),
+                new Color(108, 55, 24),
+                new Color(72, 34, 14)
+            }));
+        g2.fillRoundRect(10, 360, 580, 235, 75, 75);
+        g2.setClip(savedClip);
+
+        // 4. Side Dishes & Table Props, laid out on top of the tabletop
+        drawTableFoodDishes(g2, 300, tableY, st);
+
+        // 5. Centerpiece: Steaming Thai Moo Kratha Pot with sizzling pork & soup moat
         drawMooKrathaPot(g2, potX, potY, st);
 
-        // 5. Animated Billowing Steam & Aroma Curves (Lab 3 Cubic Bezier)
+        // 6. Animated Billowing Steam & Aroma Curves (Lab 3 Cubic Bezier)
         drawMooKrathaSteam(g2, potX, potY, st);
 
-        // 6. Warm overhead lighting & cozy nostalgic vignette
+        // 7. Warm overhead lighting & cozy nostalgic vignette
         drawMooKrathaWarmLighting(g2, st);
     }
 
@@ -5758,32 +5822,33 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int shoulderX = x + 14, shoulderY = y;
         int headX = shoulderX + 8, headY = (int) (shoulderY - 28 + chew * 0.3);
 
-        // 1. Sitting Legs on Floor (Dark Grey Sweatpants)
+
+        // 1. Sitting cross-legged on the floor - both shins fold in to the middle
         g2.setColor(INK);
-        bresenhamLine(g2, hipX, hipY, hipX - 22, hipY + 16, t2);
-        bresenhamLine(g2, hipX - 22, hipY + 16, hipX + 12, hipY + 28, t2);
-        // Pants
-        g2.setColor(new Color(55, 60, 70));
-        fillMidpointEllipse(g2, hipX - 6, hipY + 14, 20, 11, new Color(55, 60, 70));
-        // White Sock / Foot
-        g2.setColor(Color.WHITE);
-        fillMidpointEllipse(g2, hipX + 14, hipY + 28, 7, 5, Color.WHITE);
+        // near leg, folded across the front
+        bresenhamLine(g2, hipX - 4, hipY, hipX - 26, hipY + 18, t2);
+        bresenhamLine(g2, hipX - 26, hipY + 18, hipX + 6, hipY + 30, t2);
+        g2.fillOval(hipX + 2, hipY + 26, 15, 8);
+        // far leg, tucked behind it
+        bresenhamLine(g2, hipX + 6, hipY, hipX + 25, hipY + 16, t2);
+        bresenhamLine(g2, hipX + 25, hipY + 16, hipX - 2, hipY + 27, t2);
+        g2.fillOval(hipX - 10, hipY + 23, 15, 8);
 
         // 2. Torso & Cozy Red Hoodie
         g2.setColor(INK);
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
-        g2.setColor(new Color(220, 42, 42)); // Vibrant Red Hoodie
-        fillMidpointEllipse(g2, (shoulderX + hipX) / 2, (shoulderY + hipY) / 2, 16, 26, new Color(220, 42, 42));
-        // White hood drawstrings & white chest graphic
+        int torsoCX = (shoulderX + hipX) / 2, torsoCY = (shoulderY + hipY) / 2;
+        // White hood drawstrings & chest graphic
         g2.setColor(Color.WHITE);
-        bresenhamLine(g2, shoulderX - 4, shoulderY + 6, shoulderX - 4, shoulderY + 18, 1);
-        bresenhamLine(g2, shoulderX + 2, shoulderY + 6, shoulderX + 2, shoulderY + 18, 1);
-        bresenhamLine(g2, (shoulderX + hipX) / 2 - 6, (shoulderY + hipY) / 2 - 4, (shoulderX + hipX) / 2 + 6, (shoulderY + hipY) / 2 - 4, 2);
+        bresenhamLine(g2, shoulderX - 3, shoulderY + 6, shoulderX - 3, shoulderY + 18, 1);
+        bresenhamLine(g2, shoulderX + 4, shoulderY + 6, shoulderX + 4, shoulderY + 18, 1);
+        bresenhamLine(g2, torsoCX - 7, torsoCY - 4, torsoCX + 7, torsoCY - 4, 2);
 
         // 3. Arms:
-        // Left arm holding small bowl of popcorn on lap
+        // Left arm holding small bowl of popcorn on lap - sleeve over the arm
         int bowlX = x + 18, bowlY = y + 34;
-        bresenhamLine(g2, shoulderX - 8, shoulderY + 4, bowlX, bowlY, t2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX - 8, shoulderY + 4, bowlX, bowlY, 2);
         fillMidpointCircle(g2, bowlX, bowlY, 3, INK);
         // Mini popcorn bowl in hand
         g2.setColor(new Color(35, 95, 175));
@@ -5796,7 +5861,9 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int eatHandY = (int) (headY + 6 + chew);
         int elbowX = shoulderX + 20;
         int elbowY = shoulderY + 14;
-        bresenhamLine(g2, shoulderX + 8, shoulderY + 4, elbowX, elbowY, t2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX + 8, shoulderY + 4, elbowX, elbowY, 2);
+        g2.setColor(INK);
         bresenhamLine(g2, elbowX, elbowY, eatHandX, eatHandY, t2);
         fillMidpointCircle(g2, eatHandX, eatHandY, 3, INK);
         // Popcorn piece in fingers
@@ -5833,43 +5900,43 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int shoulderX = x - 4, shoulderY = y;
         int headX = shoulderX - 4, headY = (int) (shoulderY - 28 + sway * 0.3);
 
-        // 1. Cross-legged Sitting Pose (Dark Navy Pants & White Socks)
+
+        // 1. Cross-legged sitting pose - thigh out, shin folded back in
         g2.setColor(INK);
         bresenhamLine(g2, hipX - 6, hipY, hipX - 26, hipY + 18, t2);
         bresenhamLine(g2, hipX - 26, hipY + 18, hipX - 6, hipY + 28, t2);
         bresenhamLine(g2, hipX + 6, hipY, hipX + 26, hipY + 18, t2);
         bresenhamLine(g2, hipX + 26, hipY + 18, hipX + 6, hipY + 28, t2);
-        // Pants fill
-        g2.setColor(new Color(36, 48, 70));
-        fillMidpointEllipse(g2, hipX - 16, hipY + 16, 16, 10, new Color(36, 48, 70));
-        fillMidpointEllipse(g2, hipX + 16, hipY + 16, 16, 10, new Color(36, 48, 70));
         // White socks
-        g2.setColor(Color.WHITE);
         fillMidpointEllipse(g2, hipX - 20, hipY + 26, 7, 5, Color.WHITE);
         fillMidpointEllipse(g2, hipX + 20, hipY + 26, 7, 5, Color.WHITE);
+        g2.setColor(INK);
+        midpointEllipseThin(g2, hipX - 20, hipY + 26, 7, 5);
+        midpointEllipseThin(g2, hipX + 20, hipY + 26, 7, 5);
 
         // 2. Torso & White Hoodie "23"
         g2.setColor(INK);
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
-        g2.setColor(new Color(250, 250, 252));
-        fillMidpointEllipse(g2, (shoulderX + hipX) / 2, (shoulderY + hipY) / 2, 17, 26, new Color(250, 250, 252));
+        int torsoCX = (shoulderX + hipX) / 2, torsoCY = (shoulderY + hipY) / 2;
         // Navy blue "23" graphic on chest
         g2.setColor(new Color(28, 65, 135));
         g2.setFont(new Font("SansSerif", Font.BOLD, 12));
-        g2.drawString("23", (shoulderX + hipX) / 2 - 8, (shoulderY + hipY) / 2 - 2);
+        g2.drawString("23", torsoCX - 8, torsoCY - 2);
 
         // 3. Hugging Soft Green Cushion on Lap!
         int pillowX = x - 2;
-        int pillowY = y + 26;
-        g2.setColor(new Color(110, 175, 105)); // Sage Green Cushion
-        fillMidpointEllipse(g2, pillowX, pillowY, 22, 16, new Color(110, 175, 105));
-        g2.setColor(new Color(135, 198, 130));
-        fillMidpointEllipse(g2, pillowX, pillowY - 2, 17, 12, new Color(135, 198, 130));
-
-        // Arms hugging around the pillow
+        int pillowY = y + 32;
+        fillMidpointEllipse(g2, pillowX + 2, pillowY + 2, 18, 13, new Color(84, 140, 80));
+        fillMidpointEllipse(g2, pillowX, pillowY, 17, 12, new Color(118, 182, 112));
+        fillMidpointEllipse(g2, pillowX - 5, pillowY - 4, 6, 4, new Color(255, 255, 255, 50));
         g2.setColor(INK);
-        bresenhamLine(g2, shoulderX - 12, shoulderY + 4, pillowX - 15, pillowY + 2, t2);
-        bresenhamLine(g2, shoulderX + 12, shoulderY + 4, pillowX + 15, pillowY + 2, t2);
+        midpointEllipseThin(g2, pillowX, pillowY, 17, 12);
+
+        // Sleeved arms hugging around the pillow
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX - 12, shoulderY + 4, pillowX - 15, pillowY + 2, 2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX + 12, shoulderY + 4, pillowX + 15, pillowY + 2, 2);
         fillMidpointCircle(g2, pillowX - 15, pillowY + 2, 3, INK);
         fillMidpointCircle(g2, pillowX + 15, pillowY + 2, 3, INK);
 
@@ -5910,35 +5977,38 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int shoulderX = (int) (x - 10 - lean * 0.5), shoulderY = y;
         int headX = shoulderX - 10, headY = y - 30;
 
-        // 1. Sitting Pose (Beige Joggers)
-        g2.setColor(INK);
-        bresenhamLine(g2, hipX, hipY, hipX - 18, hipY + 16, t2);
-        bresenhamLine(g2, hipX - 18, hipY + 16, hipX + 14, hipY + 28, t2);
-        g2.setColor(new Color(195, 175, 148));
-        fillMidpointEllipse(g2, hipX - 6, hipY + 14, 20, 11, new Color(195, 175, 148));
-        fillMidpointEllipse(g2, hipX + 16, hipY + 16, 15, 9, new Color(195, 175, 148));
 
-        // 2. Torso & Forest Green Hoodie with white sleeve stripes
+        // 1. Sitting cross-legged on the floor, both shins folded in
+        g2.setColor(INK);
+        bresenhamLine(g2, hipX - 4, hipY, hipX - 24, hipY + 18, t2);
+        bresenhamLine(g2, hipX - 24, hipY + 18, hipX + 6, hipY + 30, t2);
+        g2.fillOval(hipX + 2, hipY + 26, 15, 8);
+        bresenhamLine(g2, hipX + 6, hipY, hipX + 24, hipY + 16, t2);
+        bresenhamLine(g2, hipX + 24, hipY + 16, hipX - 2, hipY + 27, t2);
+        g2.fillOval(hipX - 10, hipY + 23, 15, 8);
+
+        // 2. Torso & Forest Green Hoodie
         g2.setColor(INK);
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
-        g2.setColor(new Color(45, 138, 68)); // Forest Green
-        fillMidpointEllipse(g2, (shoulderX + hipX) / 2, (shoulderY + hipY) / 2, 16, 26, new Color(45, 138, 68));
-        // White sleeve stripes
+        int torsoCX = (shoulderX + hipX) / 2, torsoCY = (shoulderY + hipY) / 2;
+        // White chest stripe
         g2.setColor(Color.WHITE);
-        bresenhamLine(g2, shoulderX - 4, shoulderY + 8, shoulderX + 2, shoulderY + 8, 2);
+        bresenhamLine(g2, torsoCX - 8, torsoCY - 5, torsoCX + 8, torsoCY - 5, 2);
 
         // 3. Large Orange Throw Pillow Hugged Against Chest
         int pilX = shoulderX + 2;
-        int pilY = shoulderY + 24;
-        g2.setColor(new Color(235, 110, 42)); // Warm Orange Pillow
-        fillMidpointEllipse(g2, pilX, pilY, 24, 18, new Color(235, 110, 42));
-        g2.setColor(new Color(250, 145, 75));
-        fillMidpointEllipse(g2, pilX, pilY - 2, 18, 13, new Color(250, 145, 75));
-
-        // Arms tightly wrapped around pillow
+        int pilY = shoulderY + 30;
+        fillMidpointEllipse(g2, pilX + 2, pilY + 2, 19, 14, new Color(196, 86, 30));
+        fillMidpointEllipse(g2, pilX, pilY, 18, 13, new Color(238, 122, 52));
+        fillMidpointEllipse(g2, pilX - 6, pilY - 4, 6, 4, new Color(255, 255, 255, 55));
         g2.setColor(INK);
-        bresenhamLine(g2, shoulderX - 10, shoulderY + 4, pilX - 16, pilY + 2, t2);
-        bresenhamLine(g2, shoulderX + 10, shoulderY + 4, pilX + 16, pilY + 2, t2);
+        midpointEllipseThin(g2, pilX, pilY, 18, 13);
+
+        // Sleeved arms tightly wrapped around pillow
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX - 10, shoulderY + 4, pilX - 16, pilY + 2, 2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX + 10, shoulderY + 4, pilX + 16, pilY + 2, 2);
         fillMidpointCircle(g2, pilX - 16, pilY + 2, 3, INK);
         fillMidpointCircle(g2, pilX + 16, pilY + 2, 3, INK);
 
@@ -5970,33 +6040,40 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         int shoulderX = x - 4, shoulderY = (int) (y - 2 - cheerHop);
         int headX = shoulderX - 6, headY = (int) (shoulderY - 28 - cheerHop * 0.5);
 
-        // 1. Sitting on Sofa (Navy Pants)
+
+        // 1. Sitting up on the sofa with both legs folded onto the seat. They are
+        //    kept short and tucked so they stay on the cushion instead of dangling
+        //    down over the friend sitting on the floor below him.
         g2.setColor(INK);
-        bresenhamLine(g2, hipX, hipY, hipX + 16, hipY + 18, t2);
-        g2.setColor(new Color(28, 40, 60));
-        fillMidpointEllipse(g2, hipX + 4, hipY + 10, 18, 12, new Color(28, 40, 60));
+        bresenhamLine(g2, hipX - 4, hipY, hipX + 15, hipY + 9, t2);
+        bresenhamLine(g2, hipX + 15, hipY + 9, hipX + 11, hipY + 26, t2);
+        g2.fillOval(hipX + 4, hipY + 22, 15, 8);
+        bresenhamLine(g2, hipX + 6, hipY, hipX + 26, hipY + 11, t2);
+        bresenhamLine(g2, hipX + 26, hipY + 11, hipX + 23, hipY + 28, t2);
+        g2.fillOval(hipX + 16, hipY + 24, 15, 8);
 
         // 2. Torso & Royal Blue Hoodie
         g2.setColor(INK);
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
-        g2.setColor(new Color(36, 105, 215)); // Royal Blue Hoodie
-        fillMidpointEllipse(g2, (shoulderX + hipX) / 2, (shoulderY + hipY) / 2, 16, 26, new Color(36, 105, 215));
+        int torsoCX = (shoulderX + hipX) / 2, torsoCY = (shoulderY + hipY) / 2;
         // White graphic chest line
         g2.setColor(Color.WHITE);
-        bresenhamLine(g2, (shoulderX + hipX) / 2 - 7, (shoulderY + hipY) / 2 - 2, (shoulderX + hipX) / 2 + 7, (shoulderY + hipY) / 2 - 2, 2);
+        bresenhamLine(g2, torsoCX - 8, torsoCY - 2, torsoCX + 8, torsoCY - 2, 2);
 
         // 3. Resting Arms on Yellow Cushion on Sofa
         int cushX = x - 22;
         int cushY = y + 18;
-        g2.setColor(new Color(245, 205, 55)); // Bright Yellow Cushion
-        fillMidpointEllipse(g2, cushX, cushY, 22, 15, new Color(245, 205, 55));
-        g2.setColor(new Color(255, 225, 95));
-        fillMidpointEllipse(g2, cushX, cushY - 2, 17, 10, new Color(255, 225, 95));
-
-        // Arms resting on cushion & gesturing
+        fillMidpointEllipse(g2, cushX + 2, cushY + 2, 20, 14, new Color(203, 165, 38));
+        fillMidpointEllipse(g2, cushX, cushY, 19, 13, new Color(246, 208, 62));
+        fillMidpointEllipse(g2, cushX - 6, cushY - 4, 6, 4, new Color(255, 255, 255, 60));
         g2.setColor(INK);
-        bresenhamLine(g2, shoulderX - 10, shoulderY + 4, cushX - 10, cushY - 2, t2);
-        bresenhamLine(g2, shoulderX + 10, shoulderY + 4, cushX + 12, cushY - 2, t2);
+        midpointEllipseThin(g2, cushX, cushY, 19, 13);
+
+        // Sleeved arms resting on cushion & gesturing
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX - 10, shoulderY + 4, cushX - 10, cushY - 2, 2);
+        g2.setColor(INK);
+        bresenhamLine(g2, shoulderX + 10, shoulderY + 4, cushX + 12, cushY - 2, 2);
         fillMidpointCircle(g2, cushX - 10, cushY - 2, 3, INK);
         fillMidpointCircle(g2, cushX + 12, cushY - 2, 3, INK);
 
