@@ -20,27 +20,32 @@ Submit before 23.59 of Monday 28 August 2026
 ## 1. Project overview
 
 This project is a 600 x 600 Java Swing animation created with the Java 2D API.
-It presents a quiet present-day moment that triggers three childhood memories:
-a funny football match, an imaginative toy-sword battle, and a happy day playing
-in a forest stream. The animation uses a hand-drawn stickman style and loops
-continuously every 22 seconds.
+It presents a quiet present-day moment that triggers five nostalgic childhood and family memories:
+a funny football match, an imaginative toy-sword battle, a happy day playing
+in a forest stream, a warm family Moo Kratha (Thai BBQ) dinner at home, and a cozy evening
+watching an animated Ultraman vs Godzilla battle on TV with friends.
+The animation uses a hand-drawn stickman style and loops continuously every 37.8 seconds.
 
 The visual story follows this structure:
 
 ```text
-Present: looking at the night sky
+Present: looking at the night sky (wide & POV)
         -> falls asleep
-Memory 1: football match
+Memory 1: football match & bicycle kick
         -> memory changes
-Memory 2: toy-sword fight
+Memory 2: toy-sword fight & BONK
         -> memory changes
 Memory 3: playing in a forest stream
-        -> wakes up in the present
+        -> memory changes
+Memory 4: cozy Moo Kratha dinner with family at home
+        -> memory changes
+Memory 5 (Scene 6): cozy TV night at home (Ultraman vs Godzilla animated battle)
+        -> wakes up in the present (tear of nostalgia flows & zoom out)
 ```
 
 ## 2. Complete timeline
 
-### Scene 1: Present - night stargazing (0.0-4.6 seconds)
+### Scene 1: Present - night stargazing (0.0-6.8 seconds)
 
 The main character lies on a grassy hill at night. His head is on the left side
 of the frame and his feet point to the right. Both hands are placed behind his
@@ -57,19 +62,20 @@ The environment contains:
 - swaying foreground grass and moonlit chamomile flowers;
 - a dark vignette around the edges of the frame.
 
-The character gently moves up and down to suggest breathing. From 1.2 to 2.6
-seconds, a shooting star travels diagonally across the sky. From 1.8 to 4.3
-seconds, the camera smoothly zooms toward the character's eye. The entire head
-is rotated as one unit so the hair, eyes, mouth, and outline remain connected.
+The character gently moves up and down to suggest breathing. From 1.0 to 2.5
+seconds, a shooting star travels diagonally across the sky. From 2.4 to 3.4
+seconds, the camera smoothly zooms toward the character's eye.
 
-The eye animation begins at 3.2 seconds. The eyes gradually change from open to
-closed and are fully closed at 3.9 seconds. This provides the visual motivation
-for the transition into the memories.
+At 3.4 seconds, the perspective seamlessly switches into a First-Person POV
+(looking directly up into the vast night sky through the character's eyes).
+From 4.0 to 4.45 seconds, the character blinks naturally (eyelids gently
+close ~50% and reopen) while continuing to gaze peacefully at the starry cosmos.
+From 5.6 to 6.5 seconds, the eyelids slowly and gently close down into
+peaceful darkness, initiating the nostalgic flashback.
 
-At 4.6 seconds, the scene closes into a black transition before Memory 1 begins.
-Expanding circular rings appear near the character's head during the warp.
+At 6.8 seconds, the scene transitions smoothly into Memory 1.
 
-### Scene 2: Memory 1 - football match (4.6-9.6 seconds)
+### Scene 2: Memory 1 - football match (6.8-11.8 seconds)
 
 The first memory takes place on a bright grassy football field. The scene shows
 a player running beneath a falling ball and attempting an exaggerated bicycle kick.
@@ -86,10 +92,9 @@ The action develops as follows:
   the comedic hit.
 - After the action, the kicker lands and performs a celebratory SIUUU pose.
 
-At 9.6 seconds, expanding rings and a white warp transition move the animation
-into the second memory.
+At 11.8 seconds, a clean white flash transition moves the animation into the second memory.
 
-### Scene 3: Memory 2 - toy-sword fight (9.6-15.6 seconds)
+### Scene 3: Memory 2 - toy-sword fight (11.8-17.8 seconds)
 
 The second memory is an imaginative childhood battle in a dramatic sunset field.
 The background contains a purple-to-orange gradient sky, a glowing sun, distant
@@ -111,9 +116,9 @@ The action is divided into four phases:
    comic word “BONK!” appears during the impact. The injured child then cries with
    exaggerated waterfall tears while the other child panics and apologizes.
 
-At 15.6 seconds, a white warp transition opens the stream memory.
+At 17.8 seconds, a white warp transition opens the stream memory.
 
-### Scene 4: Memory 3 - playing in a forest stream (15.6-19.6 seconds)
+### Scene 4: Memory 3 - playing in a forest stream (17.8-22.8 seconds)
 
 The third memory is a warm and energetic childhood scene based on the reference
 image in `ref/scene4/1.png`. Four friends are playing together in a shallow stream
@@ -135,84 +140,161 @@ memory instead of four identical standing figures:
 - **Left friend - splashing:** leans toward the group and throws a stream of water
   toward the center. Droplets follow a curved arc from the hands.
 - **Center-back friend - laughing:** stands slightly farther back, raises the arms,
-  and can hold a simple bucket-like prop above the head.
-- **Center-front friend - celebrating:** sits or kneels in the stream, laughs with
-  an open smile, and raises both hands in excitement.
-- **Right friend - jumping:** jumps from a rock into the stream with both feet lifted,
-  arms raised, and a large splash at the landing area.
+  and splashes cheerfully.
+- **Center-front friend - celebrating:** sits in the stream, laughs with an open smile,
+  and raises both hands in excitement.
+- **Right friend - jumping:** steps onto the riverbank and waves happily.
 
-The three friends already in the water are drawn first. A translucent water-surface
-layer is then drawn over their lower bodies so the waterline crosses around the
-waist. The jumping friend is drawn in front of this layer so the airborne pose and
-the splash remain visible.
+At 22.8 seconds, a bright white warp transition opens the home Moo Kratha memory.
 
-The stream scene uses stronger foreground and background separation than the
-earlier version. The forest and distant foliage stay behind the characters, while
-rocks, ripples, and splashes appear in front of the water. This creates depth and
-makes the characters look like they are inside the stream.
+### Scene 5: Memory 4 - cozy Moo Kratha dinner at home with family (22.8-28.8 seconds)
 
-At 19.6 seconds, the stream memory closes with a black fade before returning to
-the present scene.
+The fourth memory is a deeply heartwarming and nostalgic family dining scene based on
+the reference image in `ref/scene5/1.png`. Four stickman family members/friends are
+gathered around a sizzling Thai Moo Kratha (หมูกระทะ) pan at home in a cozy room with
+warm golden-amber lighting.
 
-### Scene 5: Return to the present (19.6-22.0 seconds)
+The environment contains:
 
-The night stargazing scene returns with the camera still close to the character's
-eye. From 19.6 to 20.2 seconds, the black return transition completes. From 20.2
-to 21.6 seconds, the camera smoothly zooms back out to the original composition.
+- a warm indoor room wallpaper gradient and polished teak wood floor;
+- a wooden staircase climbing up in the background;
+- framed family photos and cute memo notes on the wall (`กินข้าวยังครับ? ♥`, `สู้ๆ นะ!`, `GOOD LUCK!`);
+- a silver refrigerator with colorful bear/apple magnets;
+- a wooden bookshelf with colorful books and a trailing potted green plant;
+- a warm overhead pendant lamp casting a glowing golden light cone over the table;
+- a large wooden dining table spread with delicious food side dishes:
+  - stainless steel trays of thinly sliced pink marbled pork belly;
+  - dark-glazed marinated pork trays sprinkled with roasted white sesame seeds;
+  - thick-cut bacon strips tray;
+  - plates of snowy glass noodles;
+  - bowls of fiery red Thai Suki/Moo Kratha dipping sauce with sesame and chopped green chili;
+  - cold faceted glasses of iced cola with floating ice cubes and bear emblems.
 
-The character's eyes reopen from 20.8 to 21.4 seconds. The character is once again
-lying peacefully on the grass. At 22.0 seconds, the animation loops back to 0.0
-seconds and begins the stargazing scene again.
+The centerpiece is an intricately detailed, steaming Thai Moo Kratha pot:
+- dark burner stand with warm gas flame glow;
+- outer stainless steel bowl rim and circular soup moat with simmering golden broth,
+  napa cabbage, morning glory greens, enoki mushroom bundles, carrot flower slices,
+  and animated simmering bubbles;
+- raised domed center grill with grill ridges, melting pork lard at the apex,
+  and sizzling sliced pork belly with golden-brown sear marks;
+- multi-layer billowing aromatic steam plumes curling upward using smooth cubic Bezier curves.
+
+The 4 stickman characters interact around the table:
+- **Friend 1 (Left - Black shirt):** leans forward with chopsticks, reaching into the
+  pan to pick up a sizzling pork slice, with an excited wink and wide smile.
+- **Friend 2 (Center-Left - White "SUMMER" shirt / Protagonist):** holds chopsticks high
+  with a succulent, steaming piece of grilled pork belly right in front of his face,
+  blowing on it with blushing pink cheeks and sparkling joyful eyes.
+- **Friend 3 (Center-Right - Blue "GOOD VIBES" shirt):** holds a small dipping sauce bowl
+  in one hand and chopsticks in the other, laughing wholeheartedly with closed crescent eyes (`^ ^`).
+- **Friend 4 (Right - Yellow "SKATE" shirt):** raises high a cold glass of iced cola
+  cheering towards the group ("ชนแก้ว!") with a cheerful open smile.
+
+At 28.8 seconds, a clean white warp transition opens the living room TV show memory.
+
+### Scene 6: Memory 5 - watching TV together at home (Ultraman vs Godzilla) (28.8-34.8 seconds)
+
+The fifth memory is a nostalgic childhood scene based on `ref/scene6/1.png`. Four friends
+are gathered together in the living room on a cozy evening, eating popcorn, hugging pillows,
+and excitedly watching an animated action battle on television between **Ultraman Stickman**
+and a giant **Godzilla Monster**.
+
+The environment contains:
+
+- a warm cream-amber living room wall and polished teak wood floor;
+- a large patterned woven living room rug;
+- a deep-teal cushioned sofa in the background with colorful throw cushions (yellow, green, orange);
+- a floor lamp on the right casting a warm amber glow;
+- a wall clock, framed "ADVENTURE" mountain landscape poster, and wooden shelf with family photo & succulent;
+- a wooden TV console with game console and glowing green power LED;
+- a low wooden coffee table in the foreground spread with snacks:
+  - a large royal blue ceramic bowl with golden stars, heaped high with buttery popcorn;
+  - a crinkled yellow snack bag;
+  - striped soda paper cups with white bent straws;
+  - a black TV remote control resting on the tabletop.
+
+The animated TV screen show (`drawTVScreenBattle`):
+- a city skyline under blue sky with skyscrapers and glowing window grids;
+- **Ultraman Stickman:** silver metallic hero with red body markings, fin crest helmet,
+  glowing yellow eyes, and flashing blue color timer on the chest; strikes the iconic
+  cross-arm (+) pose to fire the **Spacium Ray (ลำแสงสเปเซียม)** electric cyan-white energy beam;
+- **Godzilla Kaiju Monster:** giant roaring dark-green reptilian kaiju with glowing red eyes,
+  sharp teeth, and glowing atomic dorsal spines, breathing a roaring orange-red **Atomic Fire Breath**;
+- **Clash Explosion:** the two beams collide in mid-air with starburst sparks, energy rings, and explosion pulses;
+- **Dynamic TV Glow:** the TV casts pulsating cyan-blue and fiery-orange ambient backlight across the room.
+
+The 4 stickman friends watching TV:
+- **Friend 1 (Left - Red Hoodie):** sits on the carpet, holding a popcorn bowl and popping a piece of popcorn into his mouth, smiling at the TV action.
+- **Friend 2 (Center - White Hoodie "23" / Protagonist):** sits cross-legged on the carpet hugging a soft green cushion on his lap, with sparkling admiring eyes and joyful open smile.
+- **Friend 3 (Right floor - Green Hoodie):** sits on the carpet hugging a large orange throw pillow tightly against his chest, leaning forward in pure suspense.
+- **Friend 4 (Back - Blue Hoodie):** sits up high on the sofa, resting his arms on a yellow cushion, laughing and cheering enthusiastically for Ultraman!
+
+At 34.8 seconds, the scene gently fades into peaceful darkness before returning to
+the present night scene.
+
+### Scene 7: Return to the present (34.8-37.8 seconds)
+
+The memory sequence completes and returns to the present stargazing moment in
+First-Person POV. From 34.8 to 35.6 seconds, the character's eyelids gently flutter
+open to reveal the starry sky once more.
+
+From 35.6 to 36.9 seconds, the camera smoothly zooms back out from the character's
+face to the wide composition. As the character smiles peacefully, a glistening tear
+of nostalgia forms and trickles down the cheek (drawn with midpoint circle/ellipse
+and glistening trail).
+
+From 36.9 to 37.8 seconds, the tear gently fades out into a calm, fulfilled smile,
+seamlessly looping back to 0.0 seconds.
 
 ## 3. Transitions and visual effects
 
-- The transition from the present into Memory 1 uses a black fade because it is
-  connected to the character closing his eyes.
-- The transition between Memory 1 and Memory 2 uses a white warp flash.
-- The transition into Memory 3 uses expanding circular rings and a bright white
-  warp to create a new memory reveal.
-- The transition from Memory 3 back to the present uses a black fade.
-- Warp rings originate near the character's head and are drawn with the midpoint
-  circle algorithm.
+- The transition from the present into Memory 1 uses a smooth black fade as the
+  character closes his eyes.
+- The transition between Memory 1 and Memory 2 uses a clean white flash.
+- The transition into Memory 3 uses a bright white flash to reveal the stream.
+- The transition into Memory 4 uses a warm white warp flash to reveal the Moo Kratha dinner.
+- The transition into Memory 5 uses a clean white warp flash to reveal the living room TV show.
+- The transition from Memory 5 back to the present uses a smooth black fade into sleep/waking.
 - The football impact and sword “BONK!” moment use separate short white flashes and
   screen shake.
-- Stars twinkle, grass moves in the wind, water ripples animate, and droplets move
-  with the stream actions.
+- Stars twinkle, grass moves in the wind, water ripples animate, steam billows, soup simmers, and TV screen battles clash.
 
 ## 4. Camera and presentation
 
 - The viewport is fixed at 600 x 600 pixels.
-- The present scene uses a side-oriented lying pose and a targeted zoom toward the
-  eye.
-- The camera transforms the night scene as a complete composition instead of
-  moving individual facial or body parts independently.
-- The memory scenes use full-frame action compositions.
+- The present scene uses a side-oriented lying pose and a targeted zoom toward the eye.
+- The camera transforms the night scene as a complete composition.
+- The memory scenes use full-frame action compositions with rich foreground and background depth.
 - The first and final transitions use a black fade; the internal memory reveals
-  use white warp flashes and rings.
+  use white warp flashes.
 - The animation runs at approximately 60 frames per second and repeats automatically.
 
 ## 5. Java 2D and computer-graphics techniques
 
 The program is implemented using Java Swing and Java 2D only. It demonstrates:
 
-- Bresenham line drawing for stickman limbs and action lines;
+- Bresenham line drawing for stickman limbs, table edges, chopsticks, TV bezel, buildings, and ray beams;
 - DDA line drawing from the graphics laboratory algorithms;
-- Bezier curves for hair, faces, mouths, eyelids, grass, waves, and slash effects;
-- midpoint circle drawing for the moon, heads, droplets, sparks, and warp rings;
-- midpoint ellipse drawing for flowers, craters, petals, and small water details;
-- `AffineTransform` for the present-scene camera zoom and head rotation;
-- alpha blending and gradient paints for atmosphere, lighting, water, and transitions;
+- Bezier curves for hair, faces, mouths, eyelids, grass, waves, steam plumes, atomic fire breath, and slash effects;
+- midpoint circle drawing for the moon, heads, bubbles, cups, popcorn kernels, clock, and energy sparks;
+- midpoint ellipse drawing for the Moo Kratha pan, cushions, plates, Godzilla spines, and room carpets;
+- `AffineTransform` for the present-scene camera zoom, head rotation, and hand gestures;
+- alpha blending and gradient paints for atmosphere, lighting, water, broth, TV backlight glow, and transitions;
 - elapsed-time animation using normalized progress and smooth-step interpolation.
 
 ## 6. Story purpose
 
 The animation presents memories as emotionally connected snapshots. The quiet
 night scene establishes the present. Closing the eyes becomes the gateway into
-childhood memories. The three memories deliberately vary in mood:
+childhood and family memories. The five memories deliberately vary in mood:
 
 - football provides comedy and energetic movement;
 - the toy battle provides imagination and exaggerated drama;
-- the stream scene provides friendship, laughter, and shared happiness.
+- the stream scene provides carefree childhood friendship and laughter;
+- the Moo Kratha dinner provides heartfelt warmth and family togetherness;
+- the TV show night provides cozy childhood excitement and cheering for heroes.
 
 Returning to the night scene completes the loop and suggests that the character is
-remembering these moments while resting under the stars.
+remembering these cherished moments while resting peacefully under the starry sky.
+
+
