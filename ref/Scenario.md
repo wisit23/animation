@@ -20,11 +20,12 @@ Submit before 23.59 of Monday 28 August 2026
 ## 1. Project overview
 
 This project is a 600 x 600 Java Swing animation created with the Java 2D API.
-It presents a quiet present-day moment that triggers five nostalgic childhood and family memories:
+It presents a quiet present-day moment that triggers six nostalgic childhood and family memories:
 a funny football match, an imaginative toy-sword battle, a happy day playing
-in a forest stream, a warm family Moo Kratha (Thai BBQ) dinner at home, and a cozy evening
-watching an animated Ultraman vs Godzilla battle on TV with friends.
-The animation uses a hand-drawn stickman style and loops continuously every 37.8 seconds.
+in a forest stream, riding bicycles together on a sun-drenched countryside road at sunset,
+a cozy evening watching an animated Ultraman vs Godzilla battle on TV with friends,
+and a warm family Moo Kratha (Thai BBQ) dinner at home.
+The animation uses a hand-drawn anime/stickman style and loops continuously every 43.8 seconds.
 
 The visual story follows this structure:
 
@@ -37,9 +38,11 @@ Memory 2: toy-sword fight & BONK
         -> memory changes
 Memory 3: playing in a forest stream
         -> memory changes
-Memory 4: cozy Moo Kratha dinner with family at home
+Memory 4 (Scene 5): 4 friends riding bicycles at sunset countryside (ref/scene5/1.png)
         -> memory changes
-Memory 5 (Scene 6): cozy TV night at home (Ultraman vs Godzilla animated battle)
+Memory 5 (Scene 6): cozy TV night at home (Ultraman vs Godzilla animated battle) (ref/scene6/1.png)
+        -> memory changes
+Memory 6 (Scene 7): cozy Moo Kratha dinner with family at home (ref/scene7/1.png)
         -> wakes up in the present (tear of nostalgia flows & zoom out)
 ```
 
@@ -145,50 +148,33 @@ memory instead of four identical standing figures:
   and raises both hands in excitement.
 - **Right friend - jumping:** steps onto the riverbank and waves happily.
 
-At 22.8 seconds, a bright white warp transition opens the home Moo Kratha memory.
+At 22.8 seconds, a clean white warp transition opens the sunset countryside bicycle riding memory.
 
-### Scene 5: Memory 4 - cozy Moo Kratha dinner at home with family (22.8-28.8 seconds)
+### Scene 5: Memory 4 - riding bicycles at sunset countryside (22.8-28.8 seconds)
 
-The fourth memory is a deeply heartwarming and nostalgic family dining scene based on
-the reference image in `ref/scene5/1.png`. Four stickman family members/friends are
-gathered around a sizzling Thai Moo Kratha (หมูกระทะ) pan at home in a cozy room with
-warm golden-amber lighting.
+The fourth memory is a breathtaking and joyful childhood memory based on `ref/scene5/1.png`.
+Four friends are riding their bicycles together along a sun-drenched countryside dirt road
+at golden hour, bathed in warm sunset light and Komorebi tree shadows.
 
 The environment contains:
 
-- a warm indoor room wallpaper gradient and polished teak wood floor;
-- a wooden staircase climbing up in the background;
-- framed family photos and cute memo notes on the wall (`กินข้าวยังครับ? ♥`, `สู้ๆ นะ!`, `GOOD LUCK!`);
-- a silver refrigerator with colorful bear/apple magnets;
-- a wooden bookshelf with colorful books and a trailing potted green plant;
-- a warm overhead pendant lamp casting a glowing golden light cone over the table;
-- a large wooden dining table spread with delicious food side dishes:
-  - stainless steel trays of thinly sliced pink marbled pork belly;
-  - dark-glazed marinated pork trays sprinkled with roasted white sesame seeds;
-  - thick-cut bacon strips tray;
-  - plates of snowy glass noodles;
-  - bowls of fiery red Thai Suki/Moo Kratha dipping sauce with sesame and chopped green chili;
-  - cold faceted glasses of iced cola with floating ice cubes and bear emblems.
+- a warm golden-hour sunset gradient sky with glowing sun orb and soft amber clouds;
+- distant purple-brown mountain ranges with golden atmospheric haze;
+- rustic split-rail wooden fence along the left side with distant farm huts;
+- a traditional Japanese countryside house on the right with a weathered wooden signpost (`森の里`);
+- majestic arching green trees framing both sides, casting dynamic dappled sunlight (Komorebi);
+- a wide countryside dirt/gravel road with textured pebbles, ruts, and roadside wild chamomile flowers;
+- animated Komorebi sunbeams, floating golden dust motes, and gently drifting leaves.
 
-The centerpiece is an intricately detailed, steaming Thai Moo Kratha pot:
-- dark burner stand with warm gas flame glow;
-- outer stainless steel bowl rim and circular soup moat with simmering golden broth,
-  napa cabbage, morning glory greens, enoki mushroom bundles, carrot flower slices,
-  and animated simmering bubbles;
-- raised domed center grill with grill ridges, melting pork lard at the apex,
-  and sizzling sliced pork belly with golden-brown sear marks;
-- multi-layer billowing aromatic steam plumes curling upward using smooth cubic Bezier curves.
+The 4 friends and bicycles:
 
-The 4 stickman characters interact around the table:
-- **Friend 1 (Left - Black shirt):** leans forward with chopsticks, reaching into the
-  pan to pick up a sizzling pork slice, with an excited wink and wide smile.
-- **Friend 2 (Center-Left - White "SUMMER" shirt / Protagonist):** holds chopsticks high
-  with a succulent, steaming piece of grilled pork belly right in front of his face,
-  blowing on it with blushing pink cheeks and sparkling joyful eyes.
-- **Friend 3 (Center-Right - Blue "GOOD VIBES" shirt):** holds a small dipping sauce bowl
-  in one hand and chopsticks in the other, laughing wholeheartedly with closed crescent eyes (`^ ^`).
-- **Friend 4 (Right - Yellow "SKATE" shirt):** raises high a cold glass of iced cola
-  cheering towards the group ("ชนแก้ว!") with a cheerful open smile.
+- **Friend 1 (Left - Red Hoodie):** spiky black hair, red hoodie with white graphic block on chest, dark pants, riding a royal blue bicycle, smiling cheerfully with wind blowing his hoodie cords.
+- **Friend 2 (Center-Left Background - Blue Jacket):** brown hair, blue jacket with backpack, riding a green bicycle with front basket, pedaling happily in the background.
+- **Friend 3 (Center-Right Foreground - Protagonist / White Hoodie "23"):** brown spiky hair, clean white hoodie with bold dark-blue number **"23"**, navy trousers, riding a dark green bicycle with a basket carrying his green duffel bag, joyous smiling face with blushing cheeks.
+- **Friend 4 (Right - Green Hoodie):** dark hair, bright green hoodie with double white arm stripes, khaki pants, riding a blue bicycle with black wire basket, looking warmly at Friend 3 and the group.
+
+All bicycles feature rotating wheel spokes, spinning crank/pedals with realistic kinematic leg pedaling,
+subtle sinusoidal road vibration bobs, and swaying hair in the breeze.
 
 At 28.8 seconds, a clean white warp transition opens the living room TV show memory.
 
@@ -229,35 +215,80 @@ The 4 stickman friends watching TV:
 - **Friend 3 (Right floor - Green Hoodie):** sits on the carpet hugging a large orange throw pillow tightly against his chest, leaning forward in pure suspense.
 - **Friend 4 (Back - Blue Hoodie):** sits up high on the sofa, resting his arms on a yellow cushion, laughing and cheering enthusiastically for Ultraman!
 
-At 34.8 seconds, the scene gently fades into peaceful darkness before returning to
+At 34.8 seconds, a bright white warp transition opens the home Moo Kratha memory.
+
+### Scene 7: Memory 6 - cozy Moo Kratha dinner at home with family (34.8-40.8 seconds)
+
+The sixth memory is a deeply heartwarming and nostalgic family dining scene based on
+the reference image in `ref/scene7/1.png`. Four stickman family members/friends are
+gathered around a sizzling Thai Moo Kratha (หมูกระทะ) pan at home in a cozy room with
+warm golden-amber lighting.
+
+The environment contains:
+
+- a warm indoor room wallpaper gradient and polished teak wood floor;
+- a wooden staircase climbing up in the background;
+- framed family photos and cute memo notes on the wall (`กินข้าวยังครับ? ♥`, `สู้ๆ นะ!`, `GOOD LUCK!`);
+- a silver refrigerator with colorful bear/apple magnets;
+- a wooden bookshelf with colorful books and a trailing potted green plant;
+- a warm overhead pendant lamp casting a glowing golden light cone over the table;
+- a large wooden dining table spread with delicious food side dishes:
+  - stainless steel trays of thinly sliced pink marbled pork belly;
+  - dark-glazed marinated pork trays sprinkled with roasted white sesame seeds;
+  - thick-cut bacon strips tray;
+  - plates of snowy glass noodles;
+  - bowls of fiery red Thai Suki/Moo Kratha dipping sauce with sesame and chopped green chili;
+  - cold faceted glasses of iced cola with floating ice cubes and bear emblems.
+
+The centerpiece is an intricately detailed, steaming Thai Moo Kratha pot:
+- dark burner stand with warm gas flame glow;
+- outer stainless steel bowl rim and circular soup moat with simmering golden broth,
+  napa cabbage, morning glory greens, enoki mushroom bundles, carrot flower slices,
+  and animated simmering bubbles;
+- raised domed center grill with grill ridges, melting pork lard at the apex,
+  and sizzling sliced pork belly with golden-brown sear marks;
+- multi-layer billowing aromatic steam plumes curling upward using smooth cubic Bezier curves.
+
+The 4 stickman characters interact around the table:
+- **Friend 1 (Left - Black shirt):** leans forward with chopsticks, reaching into the
+  pan to pick up a sizzling pork slice, with an excited wink and wide smile.
+- **Friend 2 (Center-Left - White "SUMMER" shirt / Protagonist):** holds chopsticks high
+  with a succulent, steaming piece of grilled pork belly right in front of his face,
+  blowing on it with blushing pink cheeks and sparkling joyful eyes.
+- **Friend 3 (Center-Right - Blue "GOOD VIBES" shirt):** holds a small dipping sauce bowl
+  in one hand and chopsticks in the other, laughing wholeheartedly with closed crescent eyes (`^ ^`).
+- **Friend 4 (Right - Yellow "SKATE" shirt):** raises high a cold glass of iced cola
+  cheering towards the group ("ชนแก้ว!") with a cheerful open smile.
+
+At 40.8 seconds, the scene gently fades into peaceful darkness before returning to
 the present night scene.
 
-### Scene 7: Return to the present (34.8-37.8 seconds)
+### Scene 8: Return to the present (40.8-43.8 seconds)
 
 The memory sequence completes and returns to the present stargazing moment in
-First-Person POV. From 34.8 to 35.6 seconds, the character's eyelids gently flutter
+First-Person POV. From 40.8 to 41.6 seconds, the character's eyelids gently flutter
 open to reveal the starry sky once more.
 
-From 35.6 to 36.9 seconds, the camera smoothly zooms back out from the character's
+From 41.6 to 42.9 seconds, the camera smoothly zooms back out from the character's
 face to the wide composition. As the character smiles peacefully, a glistening tear
 of nostalgia forms and trickles down the cheek (drawn with midpoint circle/ellipse
 and glistening trail).
 
-From 36.9 to 37.8 seconds, the tear gently fades out into a calm, fulfilled smile,
+From 42.9 to 43.8 seconds, the tear gently fades out into a calm, fulfilled smile,
 seamlessly looping back to 0.0 seconds.
 
 ## 3. Transitions and visual effects
 
 - The transition from the present into Memory 1 uses a smooth black fade as the
   character closes his eyes.
-- The transition between Memory 1 and Memory 2 uses a clean white flash.
-- The transition into Memory 3 uses a bright white flash to reveal the stream.
-- The transition into Memory 4 uses a warm white warp flash to reveal the Moo Kratha dinner.
-- The transition into Memory 5 uses a clean white warp flash to reveal the living room TV show.
-- The transition from Memory 5 back to the present uses a smooth black fade into sleep/waking.
+- The transition between memories uses clean white flashes and warps.
+- The transition into Memory 4 (Bicycles) uses a radiant golden-white flash.
+- The transition into Memory 5 (TV Show) uses a clean white warp flash.
+- The transition into Memory 6 (Moo Kratha) uses a warm white warp flash.
+- The transition from Memory 6 back to the present uses a smooth black fade into sleep/waking.
 - The football impact and sword “BONK!” moment use separate short white flashes and
   screen shake.
-- Stars twinkle, grass moves in the wind, water ripples animate, steam billows, soup simmers, and TV screen battles clash.
+- Stars twinkle, grass moves in the wind, water ripples animate, wheels spin, bicycles bounce, steam billows, soup simmers, and TV screen battles clash.
 
 ## 4. Camera and presentation
 
@@ -273,26 +304,27 @@ seamlessly looping back to 0.0 seconds.
 
 The program is implemented using Java Swing and Java 2D only. It demonstrates:
 
-- Bresenham line drawing for stickman limbs, table edges, chopsticks, TV bezel, buildings, and ray beams;
+- Bresenham line drawing for stickman limbs, bicycle spokes, frame tubes, table edges, chopsticks, TV bezel, buildings, and ray beams;
 - DDA line drawing from the graphics laboratory algorithms;
-- Bezier curves for hair, faces, mouths, eyelids, grass, waves, steam plumes, atomic fire breath, and slash effects;
-- midpoint circle drawing for the moon, heads, bubbles, cups, popcorn kernels, clock, and energy sparks;
-- midpoint ellipse drawing for the Moo Kratha pan, cushions, plates, Godzilla spines, and room carpets;
-- `AffineTransform` for the present-scene camera zoom, head rotation, and hand gestures;
-- alpha blending and gradient paints for atmosphere, lighting, water, broth, TV backlight glow, and transitions;
+- Bezier curves for hair, faces, mouths, eyelids, grass, waves, steam plumes, atomic fire breath, bicycle handlebars, and slash effects;
+- midpoint circle drawing for bicycle wheels, wheel hubs, headlights, the moon, heads, bubbles, cups, popcorn kernels, clock, and energy sparks;
+- midpoint ellipse drawing for bicycle pedals, bag cushions, Moo Kratha pan, plates, Godzilla spines, and room carpets;
+- `AffineTransform` for the present-scene camera zoom, head rotation, bicycle scaling, and hand gestures;
+- alpha blending and gradient paints for atmosphere, lighting, Komorebi sunbeams, water, broth, TV backlight glow, and transitions;
 - elapsed-time animation using normalized progress and smooth-step interpolation.
 
 ## 6. Story purpose
 
 The animation presents memories as emotionally connected snapshots. The quiet
 night scene establishes the present. Closing the eyes becomes the gateway into
-childhood and family memories. The five memories deliberately vary in mood:
+childhood and family memories. The six memories deliberately vary in mood:
 
 - football provides comedy and energetic movement;
 - the toy battle provides imagination and exaggerated drama;
 - the stream scene provides carefree childhood friendship and laughter;
-- the Moo Kratha dinner provides heartfelt warmth and family togetherness;
-- the TV show night provides cozy childhood excitement and cheering for heroes.
+- the bicycle ride provides golden childhood freedom, adventure, and camaraderie;
+- the TV show night provides cozy childhood excitement and cheering for heroes;
+- the Moo Kratha dinner provides heartfelt warmth and family togetherness.
 
 Returning to the night scene completes the loop and suggests that the character is
 remembering these cherished moments while resting peacefully under the starry sky.

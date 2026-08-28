@@ -12,12 +12,13 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     // 0.0 -> 6.8    Scene 1: Night stargazing, zoom into eye, 1st-person POV sky & blink, eye close -> flashback
     // 6.8 -> 11.8   Scene 2 (Memory 1): Football match & bicycle kick
     // 11.8 -> 17.8  Scene 3 (Memory 2): Epic childhood toy sword fight
-    // 17.8 -> 22.8  Scene 4 (Memory 3): Playing in a cheerful stream
-    // 22.8 -> 28.8  Scene 5 (Memory 4): Cozy Moo Kratha dinner at home with family
-    // 28.8 -> 34.8  Scene 6 (Memory 5): Watching TV together - Ultraman vs Godzilla!
-    // 34.8 -> 37.8  Scene 7: Back to present, wake up POV, zoom out, tear flowing down cheek
+    // 17.8 -> 22.8  Scene 4 (Memory 3): Playing in a cheerful forest stream
+    // 22.8 -> 28.8  Scene 5 (Memory 4): Riding bicycles at sunset countryside (ref/scene5)
+    // 28.8 -> 34.8  Scene 6 (Memory 5): Watching TV together - Ultraman vs Godzilla! (ref/scene6)
+    // 34.8 -> 40.8  Scene 7 (Memory 6): Cozy Moo Kratha dinner at home with family (ref/scene7)
+    // 40.8 -> 43.8  Scene 8: Back to present, wake up POV, zoom out, tear flowing down cheek
     volatile double totalTime = 0;
-    static final double CYCLE = 37.8;     // seconds, whole animation loops after this
+    static final double CYCLE = 43.8;     // seconds, whole animation loops after this
     static final double SHOOT_START = 1.0;
     static final double SHOOT_DURATION = 1.5;
     static final double POV_ENTER_START = 2.4;   // camera starts zooming into eyes
@@ -29,17 +30,19 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     static final double WARP_INTO_MEMORY = 6.8;
     static final double WARP_INTO_SWORD = 11.8;
     static final double WARP_INTO_WATER = 17.8;
-    static final double WARP_INTO_MOOKRATHA = 22.8;
+    static final double WARP_INTO_BIKE = 22.8;
     static final double WARP_INTO_TV = 28.8;
-    static final double WARP_BACK = 34.8;
-    static final double POV_WAKE_START = 34.8;   // eyes slowly flutter open from darkness
-    static final double POV_WAKE_END = 35.6;
-    static final double POV_EXIT = 35.6;         // camera begins zooming out from face
-    static final double TEAR_START = 35.4;       // tear forms and flows down cheek
-    static final double TEAR_END = 36.9;
+    static final double WARP_INTO_MOOKRATHA = 34.8;
+    static final double WARP_BACK = 40.8;
+    static final double POV_WAKE_START = 40.8;   // eyes slowly flutter open from darkness
+    static final double POV_WAKE_END = 41.6;
+    static final double POV_EXIT = 41.6;         // camera begins zooming out from face
+    static final double TEAR_START = 41.4;       // tear forms and flows down cheek
+    static final double TEAR_END = 42.9;
     static final double WARP_RAMP = 0.45; // how long the scene transition takes each side
     static final int FRAME_MS = 16;       // ~60 fps
 
+    private BufferedImage bicycleBackdrop = null;
     private BufferedImage livingRoomBackdrop = null;
 
     // ===== Seeded background parameters (from test.java) =====
@@ -448,9 +451,20 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         return t * t * (3.0 - 2.0 * t);
     }
 
+    // Unified stickman breathing motion with subtle emotional sob hitch in Scene 8
+    private double calculateStickmanBreathe(double t) {
+        double baseBreathe = Math.sin(t * 1.2) * 2.0;
+        if (t >= POV_WAKE_START && t <= CYCLE) {
+            // Emotional trembling breath hitch when waking up and crying
+            double sobHitch = Math.sin(t * 10.0) * Math.exp(-(t - POV_WAKE_START) * 0.7) * 1.2;
+            return baseBreathe + sobHitch;
+        }
+        return baseBreathe;
+    }
+
     // Calculate stickman's eye position in world space for zoom camera targeting
     private Point2D.Double getStickmanEyePosition(double t) {
-        double breathe = Math.sin(t * 1.2) * 2.0;
+        double breathe = calculateStickmanBreathe(t);
         double headX = 150.0;
         double headY = 455.0 + breathe;
         double localEyeX = -4.0;
@@ -641,9 +655,9 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     public void drawMilkyWay(Graphics2D g2d, double time) {
         AffineTransform oldTx = g2d.getTransform();
 
-        // Diagonal galactic arch across the sky
-        g2d.translate(340, 175);
-        g2d.rotate(Math.toRadians(-40));
+        // Diagonal celestial beam / Milky Way arch aligned directly through the moon (525, 70) towards stickman (150, 460)
+        g2d.translate(338, 265);
+        g2d.rotate(Math.toRadians(-46.15));
 
         // Soft layered nebulas with translucent glow
         int[] bandWidths = {220, 150, 90, 45};
@@ -816,10 +830,14 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     public void drawForegroundFlowersAndGrass(Graphics2D g2d, double time) {
         double wind = Math.sin(time * 2.2) * 5.0;
 
-        // Foreground grass blades across meadow
+        // Foreground grass blades across meadow (skipping stickman face area so expressions remain clear)
         for (int i = 0; i < NUM_GRASS; i++) {
             double gx = grassX[i];
             double gy = grassY[i];
+
+            // Don't draw grass blades directly obscuring stickman's face
+            if (gx >= 110 && gx <= 195 && gy <= 515) continue;
+
             double gh = grassHeight[i];
             double gb = grassBend[i] + wind * (gy / 600.0);
 
@@ -836,6 +854,7 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
 
         // Chamomile / Daisy flowers (Midpoint Ellipse petals & Midpoint Circle center)
         for (int i = 0; i < NUM_FLOWERS; i++) {
+            if (flowerX[i] >= 115 && flowerX[i] <= 190 && flowerY[i] <= 510) continue;
             drawChamomileFlower(g2d, flowerX[i], flowerY[i], flowerScale[i], flowerRot[i] + wind * 0.02);
         }
     }
@@ -892,7 +911,7 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     // ================= stickman lying down, hands behind the head =================
     // classic stickman proportions: small head, long thin limbs, rounded hand/foot caps
     private void drawStickman(Graphics2D g2, double t) {
-        double breathe = Math.sin(t * 1.2) * 2.0;
+        double breathe = calculateStickmanBreathe(t);
 
         int headX = 150, headY = (int) (455 + breathe);
         int headR = 42;
@@ -980,79 +999,199 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         // ---- face ----
         int eyeY = headY - 8;
         int eyeLX = headX - 14, eyeRX = headX + 6;
-        int h = 9;
+        int h = 8;
+
+        // 1. Weary Under-Eye Bags & Exhaustion Circles (เหนื่อยกับชีวิต / ขอบตาล้าๆ)
+        // Soft desaturated shadow under eyes
+        fillMidpointEllipse(g2, eyeLX, eyeY + 6, 7, 2, new Color(42, 48, 62, 45));
+        fillMidpointEllipse(g2, eyeRX, eyeY + 6, 7, 2, new Color(42, 48, 62, 45));
+
+        // Delicate fatigue crease lines under eyes
+        g2.setColor(new Color(48, 45, 58, 120));
+        bezierCurve(g2, eyeLX - 6, eyeY + 5, eyeLX - 2, eyeY + 7, eyeLX + 2, eyeY + 7, eyeLX + 5, eyeY + 5);
+        bezierCurve(g2, eyeRX - 5, eyeY + 5, eyeRX - 2, eyeY + 7, eyeRX + 2, eyeY + 7, eyeRX + 6, eyeY + 5);
+
+        // Upper tired eyelid crease folds
+        g2.setColor(new Color(60, 58, 72, 85));
+        bezierCurve(g2, eyeLX - 5, eyeY - 6, eyeLX - 1, eyeY - 8, eyeLX + 2, eyeY - 8, eyeLX + 5, eyeY - 6);
+        bezierCurve(g2, eyeRX - 5, eyeY - 6, eyeRX, eyeY - 8, eyeRX + 3, eyeY - 8, eyeRX + 6, eyeY - 6);
+
+        // 2. Crying Flush & Reddened Eyelids in Scene 8 (ร้องไห้จนจมูกและขอบตาแดงเรื่อ)
+        boolean isScene8 = (t >= POV_WAKE_START && t <= CYCLE);
+        if (isScene8) {
+            double cryIntensity = Math.min(1.0, (t - POV_WAKE_START) / 0.8);
+            int flushAlpha = (int) (45 * cryIntensity);
+            // Flushed under-eyes
+            fillMidpointEllipse(g2, eyeLX, eyeY + 3, 7, 4, new Color(230, 95, 105, flushAlpha));
+            fillMidpointEllipse(g2, eyeRX, eyeY + 3, 7, 4, new Color(230, 95, 105, flushAlpha));
+            // Reddened nose tip & cheeks from crying
+            fillMidpointEllipse(g2, headX + 1, headY + 3, 4, 3, new Color(230, 95, 105, (int) (40 * cryIntensity)));
+            fillMidpointEllipse(g2, headX - 14, headY + 7, 6, 3, new Color(230, 95, 105, (int) (30 * cryIntensity)));
+            fillMidpointEllipse(g2, headX + 14, headY + 7, 6, 3, new Color(230, 95, 105, (int) (30 * cryIntensity)));
+        }
+
+        // 3. Eyes: Heavy, tired half-lidded gaze in Scene 1; watery, glistening wide eyes in Scene 8
         g2.setColor(new Color(20, 20, 20));
-        g2.fillOval(eyeLX - 4, eyeY - h / 2, 8, h);
-        g2.fillOval(eyeRX - 4, eyeY - h / 2, 8, h);
+        if (!isScene8) {
+            // Scene 1: Tired, heavy, half-lidded eyes (อ่อนล้า อ่อนเพลีย)
+            g2.fillOval(eyeLX - 4, eyeY - h / 2 + 1, 8, h - 1);
+            g2.fillOval(eyeRX - 4, eyeY - h / 2 + 1, 8, h - 1);
+            // Tired upper lid droop line
+            g2.setColor(new Color(20, 20, 20));
+            bezierCurve(g2, eyeLX - 5, eyeY - 2, eyeLX, eyeY - 1, eyeLX + 3, eyeY - 1, eyeLX + 5, eyeY - 2);
+            bezierCurve(g2, eyeRX - 5, eyeY - 2, eyeRX, eyeY - 1, eyeRX + 3, eyeY - 1, eyeRX + 5, eyeY - 2);
+            // Tiny faint specular glint of moonlight
+            fillMidpointCircle(g2, eyeLX - 1, eyeY - 1, 1, new Color(255, 255, 255, 160));
+            fillMidpointCircle(g2, eyeRX - 1, eyeY - 1, 1, new Color(255, 255, 255, 160));
+        } else {
+            // Scene 8: Watery eyes filled with pooled tears (ตาฉ่ำวาวไปด้วยน้ำตา)
+            g2.fillOval(eyeLX - 4, eyeY - h / 2, 8, h);
+            g2.fillOval(eyeRX - 4, eyeY - h / 2, 8, h);
 
-        // eyebrows
-        bezierCurve(g2, eyeLX - 8, eyeY - 14, eyeLX - 4, eyeY - 18, eyeLX + 3, eyeY - 18, eyeLX + 7, eyeY - 14);
-        bezierCurve(g2, eyeRX - 7, eyeY - 14, eyeRX - 3, eyeY - 18, eyeRX + 4, eyeY - 18, eyeRX + 8, eyeY - 14);
+            // Shimmering liquid tear pool in lower half of eye sockets
+            fillMidpointEllipse(g2, eyeLX, eyeY + 2, 3, 2, new Color(195, 230, 255, 220));
+            fillMidpointEllipse(g2, eyeRX, eyeY + 2, 3, 2, new Color(195, 230, 255, 220));
+            // Bright sparkling glints inside watery eyes
+            fillMidpointCircle(g2, eyeLX - 1, eyeY - 2, 1, Color.WHITE);
+            fillMidpointCircle(g2, eyeLX + 1, eyeY + 2, 1, new Color(255, 255, 255, 240));
+            fillMidpointCircle(g2, eyeRX - 1, eyeY - 2, 1, Color.WHITE);
+            fillMidpointCircle(g2, eyeRX + 1, eyeY + 2, 1, new Color(255, 255, 255, 240));
+        }
 
-        // mouth: a wide, calm smile
-        bezierCurve(g2, headX - 15, headY + 12, headX - 7, headY + 24, headX + 7, headY + 24, headX + 15, headY + 12);
+        // 4. Eyebrows: Soft weary arch in Scene 1; deeply sorrowful/nostalgic upturned inner brows in Scene 8
+        g2.setColor(new Color(20, 20, 20));
+        if (!isScene8) {
+            // Scene 1: Tired, flat/exhausted eyebrows
+            bezierCurve(g2, eyeLX - 8, eyeY - 12, eyeLX - 4, eyeY - 15, eyeLX + 3, eyeY - 15, eyeLX + 7, eyeY - 13);
+            bezierCurve(g2, eyeRX - 7, eyeY - 13, eyeRX - 3, eyeY - 15, eyeRX + 4, eyeY - 15, eyeRX + 8, eyeY - 12);
+        } else {
+            // Scene 8: Troubled, nostalgic, deeply moved eyebrows (คิ้วขมวดตกอย่างเศร้าสร้อยและซาบซึ้ง)
+            bezierCurve(g2, eyeLX - 8, eyeY - 11, eyeLX - 4, eyeY - 14, eyeLX + 2, eyeY - 18, eyeLX + 7, eyeY - 16);
+            bezierCurve(g2, eyeRX - 7, eyeY - 16, eyeRX - 2, eyeY - 18, eyeRX + 4, eyeY - 14, eyeRX + 8, eyeY - 11);
+        }
 
-        // Nostalgic tear streaming down cheek when waking up in present
+        // 5. Mouth:
+        // Scene 1: Gentle tired faint sigh/smile of an exhausted adult
+        // Scene 8: Trembling, poignant bittersweet mouth holding back a sob (ริมฝีปากสั่นเครือด้วยความสะเทือนใจ)
+        g2.setColor(new Color(20, 20, 20));
+        if (!isScene8) {
+            bezierCurve(g2, headX - 12, headY + 13, headX - 6, headY + 21, headX + 6, headY + 21, headX + 12, headY + 13);
+        } else {
+            double tremble = (t >= 41.3 && t <= 43.5) ? Math.sin(t * 26.0) * (0.8 + 0.3 * Math.sin(t * 7.0)) : 0.0;
+            // Trembling bittersweet curve: slight droop at sides with fragile quivering smile in center
+            int mx1 = headX - 14, my1 = (int) (headY + 14 + tremble * 0.5);
+            int mc1x = headX - 7, mc1y = (int) (headY + 24 + tremble);
+            int mc2x = headX + 7, mc2y = (int) (headY + 24 - tremble);
+            int mx2 = headX + 14, my2 = (int) (headY + 14 - tremble * 0.5);
+            bezierCurve(g2, mx1, my1, mc1x, mc1y, mc2x, mc2y, mx2, my2);
+
+            // Subtle lower lip trembling shadow
+            g2.setColor(new Color(40, 30, 45, 100));
+            bezierCurve(g2, headX - 5, (int)(headY + 26 + tremble), headX, (int)(headY + 28 + tremble), headX + 2, (int)(headY + 28 + tremble), headX + 5, (int)(headY + 26 + tremble));
+        }
+
+        // 6. Nostalgic Tears Streaming Down Cheeks in Scene 8 (น้ำตาไหลอาบทั้งสองข้างอย่างเศร้าสร้อย)
         if (t >= TEAR_START && t <= CYCLE) {
-            drawTearDrop(g2, headX, headY, eyeRX, eyeY, t);
+            drawEmotionalTears(g2, headX, headY, eyeLX, eyeRX, eyeY, t);
         }
 
         g2.setTransform(noTilt);
     }
 
-    private void drawTearDrop(Graphics2D g2, int headX, int headY, int eyeRX, int eyeY, double t) {
+    private void drawEmotionalTears(Graphics2D g2, int headX, int headY, int eyeLX, int eyeRX, int eyeY, double t) {
         // Tear progress down the cheek
         double progress = (t < TEAR_END) ? smoothStep((t - TEAR_START) / (TEAR_END - TEAR_START)) : 1.0;
         double fade = (t <= TEAR_END) ? 1.0 : Math.max(0.0, (CYCLE - t) / (CYCLE - TEAR_END));
 
-        int alphaTrail = (int) (150 * fade);
-        int alphaDrop = (int) (235 * fade);
+        int alphaTrail = (int) (170 * fade);
+        int alphaDrop = (int) (245 * fade);
         if (alphaDrop <= 0) return;
 
-        // Path of tear across cheek in tilted head space:
-        // Starts at right eye corner (eyeRX + 2, eyeY + 4)
-        // Curves gently past cheekbone down towards lower jaw
-        double startX = eyeRX + 2;
-        double startY = eyeY + 4;
-        double cp1X = headX + 10, cp1Y = headY + 3;
-        double cp2X = headX + 16, cp2Y = headY + 13;
-        double endX = headX + 22, endY = headY + 23;
+        // ---- TEAR 1: RIGHT EYE (Main streaming teardrop down cheek and past jaw) ----
+        double rStartX = eyeRX + 2;
+        double rStartY = eyeY + 4;
+        double rCp1X = headX + 10, rCp1Y = headY + 3;
+        double rCp2X = headX + 17, rCp2Y = headY + 14;
+        double rEndX = headX + 24, rEndY = headY + 26;
 
-        // Current tip of the tear along cubic Bezier curve at u = progress
         double u = progress;
         double u1 = 1.0 - u;
-        double curX = u1*u1*u1 * startX + 3*u1*u1*u * cp1X + 3*u1*u*u * cp2X + u*u*u * endX;
-        double curY = u1*u1*u1 * startY + 3*u1*u1*u * cp1Y + 3*u1*u*u * cp2Y + u*u*u * endY;
+        double curRX = u1*u1*u1 * rStartX + 3*u1*u1*u * rCp1X + 3*u1*u*u * rCp2X + u*u*u * rEndX;
+        double curRY = u1*u1*u1 * rStartY + 3*u1*u1*u * rCp1Y + 3*u1*u*u * rCp2Y + u*u*u * rEndY;
 
-        // 1. Shimmering tear trail
-        if (progress > 0.04) {
-            g2.setColor(new Color(175, 220, 255, alphaTrail));
-            double midCp1X = (startX + cp1X) / 2.0, midCp1Y = (startY + cp1Y) / 2.0;
-            double midCp2X = (cp1X + cp2X) / 2.0,   midCp2Y = (cp1Y + cp2Y) / 2.0;
-            bezierCurve(g2, startX, startY, midCp1X, midCp1Y, midCp2X, midCp2Y, curX, curY);
+        // 1. Shimmering wet tear trail on right cheek
+        if (progress > 0.03) {
+            g2.setColor(new Color(180, 225, 255, alphaTrail));
+            double midCp1X = (rStartX + rCp1X) / 2.0, midCp1Y = (rStartY + rCp1Y) / 2.0;
+            double midCp2X = (rCp1X + rCp2X) / 2.0,   midCp2Y = (rCp1Y + rCp2Y) / 2.0;
+            bezierCurve(g2, rStartX, rStartY, midCp1X, midCp1Y, midCp2X, midCp2Y, curRX, curRY);
+
+            // Glistening secondary sheen along the wet path
+            g2.setColor(new Color(255, 255, 255, (int) (alphaTrail * 0.7)));
+            bezierCurve(g2, rStartX - 0.5, rStartY, midCp1X - 0.5, midCp1Y, midCp2X - 0.5, midCp2Y, curRX - 0.5, curRY);
         }
 
-        // 2. Tear droplet (Midpoint Ellipse & Circle)
-        int ix = (int) Math.round(curX);
-        int iy = (int) Math.round(curY);
+        // 2. Right teardrop droplet
+        int rix = (int) Math.round(curRX);
+        int riy = (int) Math.round(curRY);
 
         // Soft outer glowing aura
-        fillMidpointCircle(g2, ix, iy, 4, new Color(145, 205, 255, alphaDrop / 4));
+        fillMidpointCircle(g2, rix, riy, 5, new Color(150, 210, 255, alphaDrop / 4));
+        // Droplet body
+        fillMidpointEllipse(g2, rix, riy, 3, 4, new Color(200, 235, 255, alphaDrop));
+        // Specular starlight glint
+        fillMidpointCircle(g2, rix - 1, riy - 1, 1, Color.WHITE);
 
-        // Droplet body (Midpoint Ellipse)
-        fillMidpointEllipse(g2, ix, iy, 2, 3, new Color(190, 230, 255, alphaDrop));
+        // ---- TEAR 2: LEFT EYE (Secondary glistening tear streaming down left cheek) ----
+        double leftProgress = Math.max(0.0, (t - (TEAR_START + 0.2)) / (TEAR_END - (TEAR_START + 0.2)));
+        if (leftProgress > 0.0) {
+            double lu = smoothStep(leftProgress);
+            double lu1 = 1.0 - lu;
+            double lStartX = eyeLX - 2;
+            double lStartY = eyeY + 4;
+            double lCp1X = headX - 18, lCp1Y = headY + 4;
+            double lCp2X = headX - 22, lCp2Y = headY + 16;
+            double lEndX = headX - 25, lEndY = headY + 25;
 
-        // Bright specular core glint (Midpoint Circle)
-        fillMidpointCircle(g2, ix - 1, iy - 1, 1, new Color(255, 255, 255, alphaDrop));
+            double curLX = lu1*lu1*lu1 * lStartX + 3*lu1*lu1*lu * lCp1X + 3*lu1*lu*lu * lCp2X + lu*lu*lu * lEndX;
+            double curLY = lu1*lu1*lu1 * lStartY + 3*lu1*lu1*lu * lCp1Y + 3*lu1*lu*lu * lCp2Y + lu*lu*lu * lEndY;
 
-        // 3. Starlight glint sparkle on tear during peak emotional moment
-        if (t >= TEAR_START + 0.4 && t <= TEAR_END) {
-            double sparkle = Math.sin((t - (TEAR_START + 0.4)) / (TEAR_END - (TEAR_START + 0.4)) * Math.PI);
-            if (sparkle > 0.25) {
-                int sparkleAlpha = (int) (180 * sparkle * fade);
+            // Wet trail on left cheek
+            g2.setColor(new Color(180, 225, 255, (int) (alphaTrail * 0.85)));
+            bezierCurve(g2, lStartX, lStartY, (lStartX + lCp1X) / 2.0, (lStartY + lCp1Y) / 2.0,
+                        (lCp1X + lCp2X) / 2.0, (lCp1Y + lCp2Y) / 2.0, curLX, curLY);
+
+            int lix = (int) Math.round(curLX);
+            int liy = (int) Math.round(curLY);
+            fillMidpointCircle(g2, lix, liy, 4, new Color(150, 210, 255, alphaDrop / 5));
+            fillMidpointEllipse(g2, lix, liy, 2, 3, new Color(200, 235, 255, (int) (alphaDrop * 0.9)));
+            fillMidpointCircle(g2, lix - 1, liy - 1, 1, Color.WHITE);
+        }
+
+        // ---- TEAR 3: FALLING DROPLET INTO MOONLIGHT (หยดน้ำตาที่ร่วงหล่นลงสู่ความมืดมิด) ----
+        if (t >= TEAR_START + 0.8 && t <= CYCLE) {
+            double fallT = (t - (TEAR_START + 0.8)) / 1.4;
+            if (fallT >= 0.0 && fallT <= 1.0) {
+                double fallY = rEndY + fallT * 32.0 + 0.5 * 9.8 * fallT * fallT * 12.0;
+                double fallX = rEndX + fallT * 4.0;
+                int fallAlpha = (int) (220 * (1.0 - fallT) * fade);
+
+                if (fallAlpha > 10) {
+                    fillMidpointCircle(g2, (int) fallX, (int) fallY, 3, new Color(160, 220, 255, fallAlpha / 3));
+                    fillMidpointEllipse(g2, (int) fallX, (int) fallY, 2, 3, new Color(210, 240, 255, fallAlpha));
+                    fillMidpointCircle(g2, (int) fallX - 1, (int) fallY - 1, 1, new Color(255, 255, 255, fallAlpha));
+                }
+            }
+        }
+
+        // ---- 4. Starlight Glint Sparkles on Tears during Emotional Peak ----
+        if (t >= TEAR_START + 0.3 && t <= TEAR_END + 0.5) {
+            double sparkle = Math.sin((t - (TEAR_START + 0.3)) / (TEAR_END + 0.5 - (TEAR_START + 0.3)) * Math.PI * 2);
+            if (Math.abs(sparkle) > 0.2) {
+                int sparkleAlpha = (int) (200 * Math.abs(sparkle) * fade);
                 g2.setColor(new Color(255, 255, 255, sparkleAlpha));
-                g2.drawLine(ix - 3, iy, ix + 3, iy);
-                g2.drawLine(ix, iy - 3, ix, iy + 3);
+                g2.drawLine(rix - 4, riy, rix + 4, riy);
+                g2.drawLine(rix, riy - 4, rix, riy + 4);
             }
         }
     }
@@ -2471,6 +2610,910 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         drawForegroundProps(g2, st);
     }
 
+    // =========================================================================
+    // SCENE 5 (MEMORY 4): 4 FRIENDS RIDING BICYCLES AT SUNSET (REF/SCENE5/1.PNG)
+    // =========================================================================
+
+    private BufferedImage buildBicycleBackdrop() {
+        BufferedImage img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_RGB);
+        Graphics2D bg = img.createGraphics();
+        bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        bg.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+        // 1. Radiant Golden-Hour Sunset Sky Gradient (Crimson-Violet -> Fiery Orange -> Golden Amber)
+        LinearGradientPaint skyGrad = new LinearGradientPaint(
+            new Point2D.Float(300, 0), new Point2D.Float(300, 320),
+            new float[]{0.0f, 0.35f, 0.70f, 1.0f},
+            new Color[]{
+                new Color(195, 80, 48),   // Sunset crimson-violet
+                new Color(245, 135, 42),  // Fiery sunset orange
+                new Color(255, 188, 72),  // Golden amber
+                new Color(255, 232, 142)  // Luminous horizon glow
+            }
+        );
+        bg.setPaint(skyGrad);
+        bg.fillRect(0, 0, 600, 320);
+
+        // 2. Setting Sun with Glowing Halos
+        int sunX = 410, sunY = 175, sunR = 38;
+        for (int r = sunR + 80; r >= sunR; r -= 6) {
+            int alpha = (int) (35 * (1.0 - (double)(r - sunR) / 80.0));
+            fillMidpointCircle(bg, sunX, sunY, r, new Color(255, 200, 95, alpha));
+        }
+        fillMidpointCircle(bg, sunX, sunY, sunR + 12, new Color(255, 235, 150, 90));
+        fillMidpointCircle(bg, sunX, sunY, sunR, new Color(255, 252, 235));
+
+        // Soft sunset clouds illuminated by golden light
+        Color cloudColor1 = new Color(255, 195, 140, 140);
+        Color cloudColor2 = new Color(245, 160, 110, 110);
+        fillMidpointEllipse(bg, 140, 95, 95, 24, cloudColor1);
+        fillMidpointEllipse(bg, 180, 85, 65, 28, cloudColor2);
+        fillMidpointEllipse(bg, 490, 110, 85, 20, cloudColor1);
+        fillMidpointEllipse(bg, 520, 102, 55, 25, cloudColor2);
+
+        // 3. Layer 1: Distant Mountain Ranges (Warm twilight silhouette)
+        int[] mtnFarX = {-20, 60, 150, 240, 330, 420, 510, 620, 620, -20};
+        int[] mtnFarY = {280, 210, 245, 190, 235, 180, 225, 200, 320, 320};
+        bg.setColor(new Color(165, 88, 72, 190));
+        bg.fillPolygon(new Polygon(mtnFarX, mtnFarY, mtnFarX.length));
+
+        // Layer 2: Mid-ground Rolling Hills (Rich warm amber-brown)
+        int[] mtnMidX = {-20, 80, 180, 270, 380, 470, 580, 620, 620, -20};
+        int[] mtnMidY = {295, 245, 275, 230, 265, 220, 255, 240, 330, 330};
+        bg.setColor(new Color(132, 68, 45, 220));
+        bg.fillPolygon(new Polygon(mtnMidX, mtnMidY, mtnMidX.length));
+
+        // 4. Countryside Dirt Road & Ground
+        // Road surface widening towards foreground in perspective
+        int[] roadX = {195, 415, 660, -60};
+        int[] roadY = {270, 270, 600, 600};
+        LinearGradientPaint roadGrad = new LinearGradientPaint(
+            new Point2D.Float(300, 270), new Point2D.Float(300, 600),
+            new float[]{0.0f, 0.45f, 1.0f},
+            new Color[]{
+                new Color(232, 175, 110), // Sunlit distant path
+                new Color(205, 142, 82),  // Mid-ground dirt
+                new Color(168, 105, 52)   // Rich foreground earth
+            }
+        );
+        bg.setPaint(roadGrad);
+        bg.fillPolygon(new Polygon(roadX, roadY, 4));
+
+        // Left & Right Roadside Green Grass Verges
+        // Left grass bank
+        int[] leftGrassX = {-20, 200, -20};
+        int[] leftGrassY = {270, 270, 600};
+        bg.setColor(new Color(88, 125, 45));
+        bg.fillPolygon(new Polygon(leftGrassX, leftGrassY, 3));
+        // Right grass bank
+        int[] rightGrassX = {410, 620, 620};
+        int[] rightGrassY = {270, 270, 600};
+        bg.setColor(new Color(78, 115, 40));
+        bg.fillPolygon(new Polygon(rightGrassX, rightGrassY, 3));
+
+        // Dirt road textures, ruts and pebbles
+        bg.setColor(new Color(145, 88, 42, 90));
+        for (int r = 300; r < 590; r += 28) {
+            double prog = (r - 270) / 330.0;
+            int rw = (int) (120 + prog * 380);
+            int rx = 300 - rw / 2;
+            bresenhamLine(bg, rx + 15, r, rx + 45, r + 4, 1);
+            bresenhamLine(bg, rx + rw - 50, r, rx + rw - 15, r + 5, 1);
+        }
+        // Scattered pebbles on the ground
+        Random roadRand = new Random(5555);
+        for (int i = 0; i < 45; i++) {
+            int px = roadRand.nextInt(560) + 20;
+            int py = roadRand.nextInt(300) + 290;
+            int pr = 1 + roadRand.nextInt(3);
+            fillMidpointEllipse(bg, px, py, pr + 1, pr, new Color(125, 78, 42, 160));
+        }
+
+        // 5. Left Split-Rail Wooden Fence (Along the roadside)
+        int[] fencePostX = {18, 62, 112, 168};
+        int[] fencePostY = {460, 410, 360, 310};
+        int[] fencePostH = {130, 110, 90, 75};
+        bg.setColor(new Color(112, 70, 40));
+        for (int i = 0; i < fencePostX.length; i++) {
+            int fx = fencePostX[i];
+            int fy = fencePostY[i];
+            int fh = fencePostH[i];
+            bg.fillRect(fx - 4, fy - fh, 8, fh);
+            bg.setColor(new Color(145, 92, 54));
+            bg.fillRect(fx - 2, fy - fh + 2, 4, fh - 2);
+            bg.setColor(new Color(85, 52, 28));
+            bresenhamLine(bg, fx - 4, fy - fh, fx + 4, fy - fh, 1);
+        }
+        // Horizontal fence rails
+        bg.setColor(new Color(118, 75, 42));
+        for (int r = 0; r < 2; r++) {
+            int off = r * 35;
+            for (int i = 0; i < fencePostX.length - 1; i++) {
+                int x1 = fencePostX[i], y1 = fencePostY[i] - fencePostH[i] + 25 + off;
+                int x2 = fencePostX[i + 1], y2 = fencePostY[i + 1] - fencePostH[i + 1] + 20 + off;
+                bresenhamLine(bg, x1, y1, x2, y2, 2);
+            }
+        }
+
+        // Distant farm huts on the left
+        bg.setColor(new Color(110, 62, 38));
+        bg.fillRect(50, 310, 48, 30);
+        int[] hutRoofX = {42, 74, 106};
+        int[] hutRoofY = {310, 285, 310};
+        bg.setColor(new Color(82, 48, 28));
+        bg.fillPolygon(new Polygon(hutRoofX, hutRoofY, 3));
+
+        // 6. Right Traditional Countryside House & Wooden Signpost (森の里)
+        // House wall (Japanese farmhouse)
+        int hx = 475, hy = 165, hw = 145, hh = 160;
+        bg.setColor(new Color(225, 208, 182)); // Warm stucco wall
+        bg.fillRect(hx, hy, hw, hh);
+        // Timber frame beams
+        bg.setColor(new Color(85, 50, 26));
+        bg.fillRect(hx, hy, 10, hh);
+        bg.fillRect(hx + 65, hy + 35, 8, hh - 35);
+        bg.fillRect(hx, hy + 35, hw, 8);
+        bg.fillRect(hx, hy + hh - 12, hw, 12);
+        // Sliding shoji window
+        bg.setColor(new Color(250, 245, 235));
+        bg.fillRect(hx + 18, hy + 48, 42, 48);
+        bg.setColor(new Color(85, 50, 26));
+        bg.drawRect(hx + 18, hy + 48, 42, 48);
+        bresenhamLine(bg, hx + 39, hy + 48, hx + 39, hy + 96, 1);
+        bresenhamLine(bg, hx + 18, hy + 72, hx + 60, hy + 72, 1);
+
+        // Japanese tiled roof
+        int[] roofX = {440, 530, 620, 620, 450};
+        int[] roofY = {175, 120, 155, 185, 192};
+        bg.setColor(new Color(62, 70, 82)); // Slate roof tiles
+        bg.fillPolygon(new Polygon(roofX, roofY, 5));
+        // Roof ridge line and highlights
+        bg.setColor(new Color(45, 52, 62));
+        bresenhamLine(bg, 440, 175, 530, 120, 3);
+        bresenhamLine(bg, 530, 120, 620, 155, 3);
+        bg.setColor(new Color(90, 102, 118));
+        for (int rx = 455; rx < 600; rx += 20) {
+            bresenhamLine(bg, rx, 160, rx - 10, 185, 1);
+        }
+
+        // Wooden Signpost: "森の里" (Forest Village) on roadside (Positioned clearly on right)
+        // Stone foundation base
+        fillMossyBoulder(bg, 535, 390, 55, 38, new Color(92, 102, 95), new Color(75, 135, 65));
+        // Vertical post
+        bg.setColor(new Color(105, 65, 36));
+        bg.fillRect(550, 235, 10, 160);
+        // Wooden sign board
+        bg.setColor(new Color(175, 132, 88));
+        bg.fillRoundRect(538, 205, 34, 105, 6, 6);
+        bg.setColor(new Color(110, 72, 40));
+        bg.drawRoundRect(538, 205, 34, 105, 6, 6);
+        // Wood grain
+        for (int sy = 215; sy < 305; sy += 16) {
+            bresenhamLine(bg, 540, sy, 570, sy + 3, 0);
+        }
+        // Kanji characters: 森 の 里 (Drawn cleanly with high contrast)
+        bg.setColor(new Color(45, 26, 12));
+        bg.setFont(new Font("Serif", Font.BOLD, 18));
+        bg.drawString("森", 547, 236);
+        bg.setFont(new Font("SansSerif", Font.BOLD, 15));
+        bg.drawString("の", 548, 264);
+        bg.setFont(new Font("Serif", Font.BOLD, 18));
+        bg.drawString("里", 547, 294);
+
+        // 7. Lush Arching Trees & Natural Organic Foliage (Layered leaf puffs)
+        // Left main tree trunk
+        bg.setColor(new Color(55, 35, 20));
+        int[] leftTrunkX = {-20, 30, 40, 5, -20};
+        int[] leftTrunkY = {0, 0, 360, 375, 0};
+        bg.fillPolygon(new Polygon(leftTrunkX, leftTrunkY, 5));
+        // Bark texture
+        bg.setColor(new Color(38, 22, 12));
+        for (int ty = 40; ty < 360; ty += 28) {
+            bresenhamLine(bg, -5, ty, 25, ty + 14, 1);
+        }
+        // Left tree branches reaching right
+        bg.setColor(new Color(68, 42, 24));
+        int[] lbrX = {25, 175, 170, 25};
+        int[] lbrY = {115, 55, 75, 135};
+        bg.fillPolygon(new Polygon(lbrX, lbrY, 4));
+
+        // Right main tree trunk
+        bg.setColor(new Color(52, 32, 18));
+        int[] rightTrunkX = {565, 610, 620, 575, 565};
+        int[] rightTrunkY = {0, 0, 340, 345, 0};
+        bg.fillPolygon(new Polygon(rightTrunkX, rightTrunkY, 5));
+        // Right branches reaching left
+        bg.setColor(new Color(65, 40, 22));
+        int[] rbrX = {575, 410, 415, 575};
+        int[] rbrY = {95, 45, 62, 115};
+        bg.fillPolygon(new Polygon(rbrX, rbrY, 4));
+
+        // Natural Organic Foliage Clusters (Deep greens, olive midtones, warm golden sunlit rims)
+        int[][] leafPuffs = {
+            // Left Canopy
+            {-40, -40, 140, 110, 0}, {-10, 10, 130, 95, 1}, {60, -25, 150, 115, 0},
+            {40, 35, 120, 85, 1}, {110, 15, 110, 75, 2}, {140, 45, 95, 65, 2},
+            {-25, 65, 125, 90, 1}, {20, 80, 105, 70, 2}, {80, 70, 90, 60, 3},
+            // Right Canopy
+            {340, -40, 150, 115, 0}, {380, 10, 140, 100, 1}, {460, -35, 160, 120, 0},
+            {440, 30, 130, 90, 1}, {360, 40, 115, 80, 2}, {480, 25, 125, 85, 2},
+            {410, 65, 100, 70, 2}, {460, 75, 110, 75, 3}, {520, 55, 110, 80, 1}
+        };
+
+        Color[] leafTones = {
+            new Color(32, 68, 25, 250),  // 0: Deep shadow green
+            new Color(48, 105, 34, 245), // 1: Rich forest green
+            new Color(82, 148, 45, 235), // 2: Fresh summer green
+            new Color(165, 205, 58, 220) // 3: Golden sunlit highlight
+        };
+
+        for (int[] puff : leafPuffs) {
+            bg.setColor(leafTones[puff[4]]);
+            bg.fillOval(puff[0], puff[1], puff[2], puff[3]);
+        }
+        // Warm golden sunlit leaf tips
+        bg.setColor(new Color(245, 225, 95, 150));
+        bg.fillOval(125, 50, 55, 35);
+        bg.fillOval(435, 45, 65, 40);
+
+        // Roadside wild flowers (Chamomile)
+        for (int i = 0; i < 18; i++) {
+            int fx = 15 + i * 22;
+            int fy = 540 + (i % 3) * 16;
+            drawChamomileFlower(bg, fx, fy, 0.7 + (i % 4) * 0.1, 0.1 * i);
+        }
+        for (int i = 0; i < 14; i++) {
+            int fx = 440 + i * 12;
+            int fy = 550 + (i % 4) * 12;
+            drawChamomileFlower(bg, fx, fy, 0.65 + (i % 3) * 0.1, -0.15 * i);
+        }
+
+        bg.dispose();
+        return img;
+    }
+
+    // =========================================================================
+    // FRONT-PERSPECTIVE BICYCLE RIG & CHARACTERS RIDING FORWARD TOWARD CAMERA
+    // =========================================================================
+
+    // Front-Perspective Bicycle Base & Front Fork/Wheel Rig
+    private void drawFrontBicycleBase(Graphics2D g2, double cx, double cy, double scale, double wheelAngle,
+                                      Color frameColor, double pedalAngle, double tiltAngle) {
+        AffineTransform old = g2.getTransform();
+        g2.translate(cx, cy);
+        g2.scale(scale, scale);
+        g2.rotate(tiltAngle, 0, 0);
+
+        int wheelW = 11;  // Front tire width in front view
+        int wheelH = 36;  // Front tire vertical radius
+        int hubY = -wheelH;
+        int forkTopY = -wheelH * 2 + 8;
+
+        // 1. Cast Shadow on road
+        fillMidpointEllipse(g2, 0, 2, 32, 8, new Color(45, 25, 12, 120));
+
+        // 2. Rear Wheel (Silhouette visible behind in perspective)
+        fillMidpointEllipse(g2, 0, hubY - 12, 8, 26, new Color(30, 32, 35, 180));
+
+        // 3. Bottom Bracket, Pedals & Crank Arms
+        int bbY = hubY + 14;
+        int crankLen = 14;
+        double leftCrankY = bbY + Math.sin(pedalAngle) * crankLen;
+        double rightCrankY = bbY - Math.sin(pedalAngle) * crankLen;
+        int crankW = 20;
+
+        // Crank axle & bottom bracket shell
+        g2.setColor(new Color(175, 180, 188));
+        bresenhamLine(g2, -crankW, bbY, crankW, bbY, 3);
+        fillMidpointCircle(g2, 0, bbY, 6, new Color(55, 58, 62));
+
+        // Left & Right Crank arms
+        bresenhamLine(g2, -crankW, bbY, -crankW, (int) leftCrankY, 3);
+        bresenhamLine(g2, crankW, bbY, crankW, (int) rightCrankY, 3);
+        // Pedals
+        fillMidpointEllipse(g2, -crankW - 4, (int) leftCrankY, 7, 3, new Color(45, 48, 52));
+        fillMidpointEllipse(g2, crankW + 4, (int) rightCrankY, 7, 3, new Color(45, 48, 52));
+        // Pedal reflectors (Orange)
+        fillMidpointCircle(g2, -crankW - 4, (int) leftCrankY, 1, new Color(255, 175, 40));
+        fillMidpointCircle(g2, crankW + 4, (int) rightCrankY, 1, new Color(255, 175, 40));
+
+        // 4. Down tube & seat tube
+        g2.setColor(frameColor);
+        bresenhamLine(g2, 0, forkTopY, 0, bbY, 5);
+        bresenhamLine(g2, 0, bbY, 0, forkTopY - 12, 4);
+
+        // 5. Front Wheel (Vertical ellipse with spinning spokes)
+        // Outer black rubber tire
+        fillMidpointEllipse(g2, 0, hubY, wheelW, wheelH, new Color(32, 35, 38));
+        // Silver rim inner
+        fillMidpointEllipse(g2, 0, hubY, wheelW - 3, wheelH - 3, new Color(210, 215, 222));
+        // Inner gap showing dirt ground through wheel
+        fillMidpointEllipse(g2, 0, hubY, wheelW - 6, wheelH - 7, new Color(195, 140, 85, 160));
+
+        // Rotating Silver Spokes in front perspective
+        g2.setColor(new Color(240, 245, 252, 220));
+        for (int i = 0; i < 8; i++) {
+            double spA = wheelAngle + i * (Math.PI / 4.0);
+            int spX = (int) (Math.cos(spA) * (wheelW - 3));
+            int spY = hubY + (int) (Math.sin(spA) * (wheelH - 3));
+            bresenhamLine(g2, 0, hubY, spX, spY, 0);
+        }
+        // Center Axle Hub
+        fillMidpointCircle(g2, 0, hubY, 4, new Color(120, 125, 132));
+
+        // 6. Front Fork (Two blades flanking front wheel)
+        g2.setColor(frameColor);
+        bresenhamLine(g2, -8, hubY, -5, forkTopY, 3);
+        bresenhamLine(g2, 8, hubY, 5, forkTopY, 3);
+        bresenhamLine(g2, -6, forkTopY, 6, forkTopY, 4);
+
+        // Front mudguard/fender
+        g2.setColor(new Color(220, 225, 232));
+        for (int fa = -wheelW - 1; fa <= wheelW + 1; fa++) {
+            fillMidpointCircle(g2, fa, forkTopY + 2, 1, new Color(220, 225, 232));
+        }
+
+        g2.setTransform(old);
+    }
+
+    // Front-Perspective Handlebars & Front Basket (Drawn in front of rider torso)
+    private void drawFrontBicycleCockpit(Graphics2D g2, double cx, double cy, double scale,
+                                        Color frameColor, boolean hasFrontBasket, Color basketBagColor,
+                                        double tiltAngle) {
+        AffineTransform old = g2.getTransform();
+        g2.translate(cx, cy);
+        g2.scale(scale, scale);
+        g2.rotate(tiltAngle, 0, 0);
+
+        int wheelH = 36;
+        int forkTopY = -wheelH * 2 + 8;
+        int stemTopY = -wheelH * 2 - 4;
+
+        // 1. Vertical Stem Post
+        g2.setColor(new Color(195, 200, 208));
+        bresenhamLine(g2, 0, forkTopY, 0, stemTopY, 4);
+
+        // 2. Horizontal Swept Handlebars
+        int barHalf = 36;
+        int barY = stemTopY;
+        g2.setColor(new Color(165, 170, 178));
+        bezierCurve(g2, -barHalf, barY + 3, -barHalf / 2, barY - 3, barHalf / 2, barY - 3, barHalf, barY + 3, 3);
+        // Rubber hand grips
+        fillMidpointEllipse(g2, -barHalf + 2, barY + 3, 6, 3, new Color(35, 38, 42));
+        fillMidpointEllipse(g2, barHalf - 2, barY + 3, 6, 3, new Color(35, 38, 42));
+        // Silver brake levers
+        g2.setColor(new Color(220, 225, 232));
+        bresenhamLine(g2, -barHalf + 6, barY + 4, -barHalf + 16, barY + 8, 1);
+        bresenhamLine(g2, barHalf - 6, barY + 4, barHalf - 16, barY + 8, 1);
+
+        // 3. Front Basket (Mounted in front of handlebars)
+        if (hasFrontBasket) {
+            int bskW = 32, bskH = 18;
+            int bskX = -bskW / 2, bskY = stemTopY + 2;
+
+            // Basket background shadow
+            g2.setColor(new Color(20, 20, 20, 140));
+            g2.fillRect(bskX + 1, bskY + 1, bskW - 2, bskH - 2);
+
+            // Luggage bag inside basket if present
+            if (basketBagColor != null) {
+                g2.setColor(basketBagColor);
+                g2.fillRoundRect(bskX + 2, bskY - 3, bskW - 4, bskH + 1, 5, 5);
+                g2.setColor(new Color(255, 255, 255, 120));
+                bresenhamLine(g2, bskX + 5, bskY + 2, bskX + bskW - 5, bskY + 2, 1);
+            }
+
+            // Wire mesh outer frame
+            g2.setColor(new Color(42, 46, 50));
+            g2.drawRoundRect(bskX, bskY, bskW, bskH, 3, 3);
+            // Crosshatch wire grid
+            for (int bx = bskX + 5; bx < bskX + bskW; bx += 5) {
+                bresenhamLine(g2, bx, bskY, bx, bskY + bskH, 0);
+            }
+            for (int by = bskY + 4; by < bskY + bskH; by += 4) {
+                bresenhamLine(g2, bskX, by, bskX + bskW, by, 0);
+            }
+
+            // Headlight under basket
+            fillMidpointCircle(g2, 0, bskY + bskH + 3, 5, new Color(255, 242, 160));
+            drawMidpointCircle(g2, 0, bskY + bskH + 3, 5, new Color(180, 185, 192));
+        } else {
+            // Headlight mounted on fork crown
+            fillMidpointCircle(g2, 0, forkTopY - 6, 5, new Color(255, 242, 160));
+            drawMidpointCircle(g2, 0, forkTopY - 6, 5, new Color(180, 185, 192));
+        }
+
+        g2.setTransform(old);
+    }
+
+    // Helper: Draws styled spiky anime hair on crown/back leaving face clean & cute
+    private void drawAnimeSpikyHair(Graphics2D g2, int hx, int hy, int r, Color hairColor) {
+        g2.setColor(hairColor);
+        // Hair cap on top crown
+        fillMidpointEllipse(g2, hx, hy - r + 4, r + 3, 8, hairColor);
+
+        // Anime Spikes on top and sides
+        int[] sp1x = {hx - r + 1, hx - r + 7, hx - r - 5};
+        int[] sp1y = {hy - r + 4, hy - r + 2, hy - r - 7};
+        g2.fillPolygon(sp1x, sp1y, 3);
+
+        int[] sp2x = {hx - 6, hx + 3, hx - 2};
+        int[] sp2y = {hy - r + 3, hy - r + 2, hy - r - 10};
+        g2.fillPolygon(sp2x, sp2y, 3);
+
+        int[] sp3x = {hx + 2, hx + r - 2, hx + 7};
+        int[] sp3y = {hy - r + 3, hy - r + 4, hy - r - 9};
+        g2.fillPolygon(sp3x, sp3y, 3);
+
+        int[] sp4x = {hx + r - 4, hx + r + 2, hx + r + 6};
+        int[] sp4y = {hy - r + 6, hy - r + 8, hy - r - 4};
+        g2.fillPolygon(sp4x, sp4y, 3);
+
+        // Side tufts
+        int[] sp5x = {hx - r, hx - r + 3, hx - r - 5};
+        int[] sp5y = {hy - 2, hy + 5, hy + 2};
+        g2.fillPolygon(sp5x, sp5y, 3);
+
+        int[] sp6x = {hx + r, hx + r - 3, hx + r + 5};
+        int[] sp6y = {hy - 2, hy + 5, hy + 2};
+        g2.fillPolygon(sp6x, sp6y, 3);
+
+        // Front fringe bangs framing forehead
+        bresenhamLine(g2, hx - 7, hy - r + 5, hx - 4, hy - r + 10, 2);
+        bresenhamLine(g2, hx, hy - r + 5, hx + 1, hy - r + 11, 2);
+        bresenhamLine(g2, hx + 6, hy - r + 5, hx + 7, hy - r + 10, 2);
+    }
+
+    // Friend 1 (Left Foreground): Red Hoodie - Laughing together with Friend 3
+    private void drawBikerFriend1_RedHoodie(Graphics2D g2, double x, double y, double st) {
+        double scale = 1.05;
+        double pedalAngle = st * 5.5;
+        double bob = Math.sin(st * 11.0) * 2.2;
+        double tilt = Math.sin(pedalAngle) * 0.04;
+
+        int bbY = (int) (y - 24 * scale);
+        int hipY = (int) (y - 56 * scale + bob);
+        int shoulderY = (int) (y - 96 * scale + bob);
+        int headY = (int) (y - 120 * scale + bob);
+        int headX = (int) x;
+        int headR = (int) (16 * scale);
+
+        int crankW = (int) (20 * scale);
+        int leftFootY = bbY + (int) (Math.sin(pedalAngle) * (14 * scale));
+        int rightFootY = bbY - (int) (Math.sin(pedalAngle) * (14 * scale));
+
+        // 1. Legs (Dark charcoal pants pumping on pedals)
+        int leftKneeX = (int) (x - 18 * scale);
+        int leftKneeY = (hipY + leftFootY) / 2 - (int) (4 * scale);
+        g2.setColor(new Color(50, 52, 60));
+        bresenhamLine(g2, (int)(x - 10 * scale), hipY, leftKneeX, leftKneeY, 5);
+        bresenhamLine(g2, leftKneeX, leftKneeY, (int)(x - crankW - 4 * scale), leftFootY, 4);
+        fillMidpointEllipse(g2, (int)(x - crankW - 4 * scale), leftFootY, (int)(8 * scale), (int)(4 * scale), new Color(245, 245, 248));
+        fillMidpointCircle(g2, (int)(x - crankW - 2 * scale), leftFootY, (int)(2 * scale), new Color(245, 115, 35)); // Orange trim
+
+        int rightKneeX = (int) (x + 18 * scale);
+        int rightKneeY = (hipY + rightFootY) / 2 - (int) (4 * scale);
+        g2.setColor(new Color(50, 52, 60));
+        bresenhamLine(g2, (int)(x + 10 * scale), hipY, rightKneeX, rightKneeY, 5);
+        bresenhamLine(g2, rightKneeX, rightKneeY, (int)(x + crankW + 4 * scale), rightFootY, 4);
+        fillMidpointEllipse(g2, (int)(x + crankW + 4 * scale), rightFootY, (int)(8 * scale), (int)(4 * scale), new Color(245, 245, 248));
+        fillMidpointCircle(g2, (int)(x + crankW + 6 * scale), rightFootY, (int)(2 * scale), new Color(245, 115, 35));
+
+        // 2. Torso: Vibrant Red Hoodie & Backpack
+        fillMidpointEllipse(g2, (int)(x - 15 * scale), shoulderY + (int)(10 * scale), (int)(10 * scale), (int)(16 * scale), new Color(35, 38, 45));
+
+        g2.setColor(new Color(225, 42, 42));
+        fillMidpointEllipse(g2, (int) x, (shoulderY + hipY) / 2, (int)(20 * scale), (int)(25 * scale), new Color(225, 42, 42));
+        // White Chest Block Graphic
+        g2.setColor(new Color(248, 248, 252));
+        g2.fillRect((int)(x - 10 * scale), (shoulderY + hipY) / 2 - (int)(8 * scale), (int)(20 * scale), (int)(10 * scale));
+        // White Hoodie Cords
+        g2.setColor(new Color(250, 250, 250));
+        bresenhamLine(g2, (int)(x - 4 * scale), shoulderY + (int)(4 * scale), (int)(x - 6 * scale), shoulderY + (int)(18 * scale), 1);
+        bresenhamLine(g2, (int)(x + 4 * scale), shoulderY + (int)(4 * scale), (int)(x + 6 * scale), shoulderY + (int)(18 * scale), 1);
+
+        // 3. Head & Joyful Anime Face (Turned slightly right toward Friend 3)
+        g2.setColor(new Color(215, 38, 38));
+        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 4);
+
+        fillMidpointCircle(g2, headX, headY, headR, Color.WHITE);
+        drawAnimeSpikyHair(g2, headX, headY, headR, new Color(28, 30, 35));
+        g2.setColor(INK);
+        midpointCircle(g2, headX, headY, headR);
+
+        // Eyes looking right toward Friend 3
+        g2.setColor(new Color(28, 30, 35));
+        g2.fillOval(headX - 2, headY - 4, (int)(4 * scale), (int)(6 * scale));
+        g2.fillOval(headX + 5, headY - 4, (int)(4 * scale), (int)(6 * scale));
+        fillMidpointCircle(g2, headX - 1, headY - 3, 1, Color.WHITE);
+        fillMidpointCircle(g2, headX + 6, headY - 3, 1, Color.WHITE);
+
+        // Laughing Open Mouth
+        fillMidpointEllipse(g2, headX + 3, headY + 5, 4, 3, new Color(220, 60, 60));
+        bezierCurve(g2, headX - 3, headY + 3, headX + 1, headY + 7, headX + 5, headY + 7, headX + 8, headY + 3, 8);
+        fillMidpointEllipse(g2, headX - 5, headY + 2, 3, 2, new Color(255, 140, 160, 160));
+        fillMidpointEllipse(g2, headX + 10, headY + 2, 3, 2, new Color(255, 140, 160, 160));
+
+        // 4. Bicycle Base (Fork & Wheel)
+        drawFrontBicycleBase(g2, x, y, scale, st * 9.0, new Color(30, 95, 205), pedalAngle, tilt);
+
+        // 5. Arms reaching forward to Handlebars
+        int gripX1 = (int) (x - 34 * scale);
+        int gripX2 = (int) (x + 34 * scale);
+        int gripY = (int) (y - 80 * scale);
+        g2.setColor(new Color(215, 38, 38));
+        bresenhamLine(g2, (int)(x - 16 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 5);
+        bresenhamLine(g2, (int)(x + 16 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 5);
+        fillMidpointCircle(g2, gripX1, gripY, (int)(3 * scale), new Color(255, 220, 185));
+        fillMidpointCircle(g2, gripX2, gripY, (int)(3 * scale), new Color(255, 220, 185));
+
+        // 6. Bicycle Cockpit (Handlebars & Headlight in front of body)
+        drawFrontBicycleCockpit(g2, x, y, scale, new Color(30, 95, 205), false, null, tilt);
+    }
+
+    // Friend 2 (Center-Left Background): Blue Jacket & Green Bicycle
+    private void drawBikerFriend2_BlueJacket(Graphics2D g2, double x, double y, double st) {
+        double scale = 0.72;
+        double pedalAngle = st * 4.8;
+        double bob = Math.sin(st * 9.6) * 1.5;
+        double tilt = Math.sin(pedalAngle) * 0.035;
+
+        int bbY = (int) (y - 24 * scale);
+        int hipY = (int) (y - 56 * scale + bob);
+        int shoulderY = (int) (y - 96 * scale + bob);
+        int headY = (int) (y - 120 * scale + bob);
+        int headX = (int) x;
+        int headR = (int) (15 * scale);
+
+        int crankW = (int) (20 * scale);
+        int leftFootY = bbY + (int) (Math.sin(pedalAngle) * (14 * scale));
+        int rightFootY = bbY - (int) (Math.sin(pedalAngle) * (14 * scale));
+
+        // 1. Legs (Navy pants)
+        g2.setColor(new Color(42, 50, 65));
+        bresenhamLine(g2, (int)(x - 10 * scale), hipY, (int)(x - 16 * scale), (hipY + leftFootY) / 2, 4);
+        bresenhamLine(g2, (int)(x - 16 * scale), (hipY + leftFootY) / 2, (int)(x - crankW - 4 * scale), leftFootY, 3);
+        bresenhamLine(g2, (int)(x + 10 * scale), hipY, (int)(x + 16 * scale), (hipY + rightFootY) / 2, 4);
+        bresenhamLine(g2, (int)(x + 16 * scale), (hipY + rightFootY) / 2, (int)(x + crankW + 4 * scale), rightFootY, 3);
+
+        // 2. Torso: Cobalt Blue Jacket & Backpack
+        fillMidpointEllipse(g2, (int)(x - 12 * scale), shoulderY + (int)(8 * scale), (int)(8 * scale), (int)(14 * scale), new Color(40, 38, 48));
+        g2.setColor(new Color(38, 78, 155));
+        fillMidpointEllipse(g2, (int) x, (shoulderY + hipY) / 2, (int)(18 * scale), (int)(22 * scale), new Color(38, 78, 155));
+
+        // 3. Head & Brown Hair
+        g2.setColor(new Color(32, 68, 140));
+        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 3);
+
+        fillMidpointCircle(g2, headX, headY, headR, Color.WHITE);
+        drawAnimeSpikyHair(g2, headX, headY, headR, new Color(115, 68, 38));
+        g2.setColor(INK);
+        midpointCircle(g2, headX, headY, headR);
+
+        // Eyes & Smile
+        g2.setColor(new Color(35, 25, 18));
+        g2.fillOval(headX - 4, headY - 3, (int)(3 * scale), (int)(5 * scale));
+        g2.fillOval(headX + 2, headY - 3, (int)(3 * scale), (int)(5 * scale));
+        fillMidpointCircle(g2, headX - 3, headY - 2, 1, Color.WHITE);
+        fillMidpointCircle(g2, headX + 3, headY - 2, 1, Color.WHITE);
+        bezierCurve(g2, headX - 3, headY + 3, headX, headY + 6, headX + 2, headY + 6, headX + 4, headY + 3, 6);
+        fillMidpointEllipse(g2, headX - 5, headY + 2, 2, 2, new Color(255, 140, 160, 140));
+        fillMidpointEllipse(g2, headX + 5, headY + 2, 2, 2, new Color(255, 140, 160, 140));
+
+        // 4. Bicycle Base
+        drawFrontBicycleBase(g2, x, y, scale, st * 8.5, new Color(42, 142, 58), pedalAngle, tilt);
+
+        // 5. Arms reaching to handlebars
+        int gripX1 = (int) (x - 34 * scale);
+        int gripX2 = (int) (x + 34 * scale);
+        int gripY = (int) (y - 80 * scale);
+        g2.setColor(new Color(32, 68, 140));
+        bresenhamLine(g2, (int)(x - 14 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 4);
+        bresenhamLine(g2, (int)(x + 14 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 4);
+        fillMidpointCircle(g2, gripX1, gripY, (int)(2 * scale), new Color(255, 220, 185));
+        fillMidpointCircle(g2, gripX2, gripY, (int)(2 * scale), new Color(255, 220, 185));
+
+        // 6. Bicycle Cockpit & Basket
+        drawFrontBicycleCockpit(g2, x, y, scale, new Color(42, 142, 58), true, null, tilt);
+    }
+
+    // Friend 3 (Center-Right Foreground): Protagonist "23" White Hoodie & Dark Green Bicycle
+    private void drawBikerFriend3_CenterHero23(Graphics2D g2, double x, double y, double st) {
+        double scale = 1.10;
+        double pedalAngle = st * 5.8;
+        double bob = Math.sin(st * 11.6) * 2.4;
+        double tilt = Math.sin(pedalAngle) * 0.04;
+
+        int bbY = (int) (y - 24 * scale);
+        int hipY = (int) (y - 56 * scale + bob);
+        int shoulderY = (int) (y - 96 * scale + bob);
+        int headY = (int) (y - 120 * scale + bob);
+        int headX = (int) x;
+        int headR = (int) (17 * scale);
+
+        int crankW = (int) (20 * scale);
+        int leftFootY = bbY + (int) (Math.sin(pedalAngle) * (14 * scale));
+        int rightFootY = bbY - (int) (Math.sin(pedalAngle) * (14 * scale));
+
+        // 1. Legs (Navy pants & white sneakers)
+        int leftKneeX = (int) (x - 19 * scale);
+        int leftKneeY = (hipY + leftFootY) / 2 - (int) (4 * scale);
+        g2.setColor(new Color(32, 45, 68));
+        bresenhamLine(g2, (int)(x - 11 * scale), hipY, leftKneeX, leftKneeY, 5);
+        bresenhamLine(g2, leftKneeX, leftKneeY, (int)(x - crankW - 4 * scale), leftFootY, 4);
+        fillMidpointEllipse(g2, (int)(x - crankW - 4 * scale), leftFootY, (int)(9 * scale), (int)(5 * scale), new Color(250, 250, 252));
+
+        int rightKneeX = (int) (x + 19 * scale);
+        int rightKneeY = (hipY + rightFootY) / 2 - (int) (4 * scale);
+        g2.setColor(new Color(32, 45, 68));
+        bresenhamLine(g2, (int)(x + 11 * scale), hipY, rightKneeX, rightKneeY, 5);
+        bresenhamLine(g2, rightKneeX, rightKneeY, (int)(x + crankW + 4 * scale), rightFootY, 4);
+        fillMidpointEllipse(g2, (int)(x + crankW + 4 * scale), rightFootY, (int)(9 * scale), (int)(5 * scale), new Color(250, 250, 252));
+
+        // 2. Torso: Clean White Hoodie & Brown Leather Backpack
+        fillMidpointEllipse(g2, (int)(x - 15 * scale), shoulderY + (int)(10 * scale), (int)(11 * scale), (int)(17 * scale), new Color(85, 52, 28));
+
+        g2.setColor(new Color(248, 248, 252));
+        fillMidpointEllipse(g2, (int) x, (shoulderY + hipY) / 2, (int)(21 * scale), (int)(26 * scale), new Color(248, 248, 252));
+
+        // Bold Blue Number "23" on Chest
+        int numCenterY = (shoulderY + hipY) / 2 - (int)(4 * scale);
+        g2.setColor(new Color(32, 68, 145));
+        g2.setFont(new Font("SansSerif", Font.BOLD, (int)(13 * scale)));
+        g2.drawString("23", (int)(x - 8 * scale), numCenterY + (int)(4 * scale));
+
+        // White Hoodie Cords
+        g2.setColor(new Color(230, 230, 235));
+        bresenhamLine(g2, (int)(x - 5 * scale), shoulderY + (int)(4 * scale), (int)(x - 6 * scale), shoulderY + (int)(18 * scale), 1);
+        bresenhamLine(g2, (int)(x + 5 * scale), shoulderY + (int)(4 * scale), (int)(x + 6 * scale), shoulderY + (int)(18 * scale), 1);
+
+        // 3. Head & Joyous Laughing Face
+        g2.setColor(new Color(240, 240, 245));
+        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 4);
+
+        fillMidpointCircle(g2, headX, headY, headR, Color.WHITE);
+        drawAnimeSpikyHair(g2, headX, headY, headR, new Color(112, 65, 34));
+        g2.setColor(INK);
+        midpointCircle(g2, headX, headY, headR);
+
+        // Big Anime Eyes & Highlights
+        g2.setColor(new Color(28, 20, 15));
+        g2.fillOval(headX - 5, headY - 4, (int)(4 * scale), (int)(6 * scale));
+        g2.fillOval(headX + 3, headY - 4, (int)(4 * scale), (int)(6 * scale));
+        fillMidpointCircle(g2, headX - 4, headY - 3, 1, Color.WHITE);
+        fillMidpointCircle(g2, headX + 4, headY - 3, 1, Color.WHITE);
+
+        // Laughing Open Mouth
+        fillMidpointEllipse(g2, headX, headY + 5, 4, 3, new Color(220, 60, 60));
+        bezierCurve(g2, headX - 4, headY + 3, headX, headY + 7, headX + 3, headY + 7, headX + 6, headY + 3, 8);
+        fillMidpointEllipse(g2, headX - 7, headY + 2, 4, 2, new Color(255, 140, 160, 160));
+        fillMidpointEllipse(g2, headX + 7, headY + 2, 4, 2, new Color(255, 140, 160, 160));
+
+        // 4. Bicycle Base
+        drawFrontBicycleBase(g2, x, y, scale, st * 9.4, new Color(28, 80, 62), pedalAngle, tilt);
+
+        // 5. Arms reaching forward to Handlebars
+        int gripX1 = (int) (x - 34 * scale);
+        int gripX2 = (int) (x + 34 * scale);
+        int gripY = (int) (y - 80 * scale);
+        g2.setColor(new Color(235, 235, 240));
+        bresenhamLine(g2, (int)(x - 17 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 5);
+        bresenhamLine(g2, (int)(x + 17 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 5);
+        fillMidpointCircle(g2, gripX1, gripY, (int)(3 * scale), new Color(255, 220, 185));
+        fillMidpointCircle(g2, gripX2, gripY, (int)(3 * scale), new Color(255, 220, 185));
+
+        // 6. Bicycle Cockpit & Front Basket carrying Green Bag
+        drawFrontBicycleCockpit(g2, x, y, scale, new Color(28, 80, 62), true, new Color(65, 125, 55), tilt);
+    }
+
+    // Friend 4 (Far-Right): Green Hoodie with Double White Stripes & Blue Bicycle
+    private void drawBikerFriend4_GreenHoodie(Graphics2D g2, double x, double y, double st) {
+        double scale = 0.92;
+        double pedalAngle = st * 5.4 + 0.8;
+        double bob = Math.sin(st * 10.8 + 0.8) * 1.9;
+        double tilt = Math.sin(pedalAngle) * 0.038;
+
+        int bbY = (int) (y - 24 * scale);
+        int hipY = (int) (y - 56 * scale + bob);
+        int shoulderY = (int) (y - 96 * scale + bob);
+        int headY = (int) (y - 120 * scale + bob);
+        int headX = (int) x;
+        int headR = (int) (15 * scale);
+
+        int crankW = (int) (20 * scale);
+        int leftFootY = bbY + (int) (Math.sin(pedalAngle) * (14 * scale));
+        int rightFootY = bbY - (int) (Math.sin(pedalAngle) * (14 * scale));
+
+        // 1. Legs (Tan/khaki pants)
+        g2.setColor(new Color(192, 165, 130));
+        bresenhamLine(g2, (int)(x - 10 * scale), hipY, (int)(x - 16 * scale), (hipY + leftFootY) / 2, 4);
+        bresenhamLine(g2, (int)(x - 16 * scale), (hipY + leftFootY) / 2, (int)(x - crankW - 4 * scale), leftFootY, 4);
+        fillMidpointEllipse(g2, (int)(x - crankW - 4 * scale), leftFootY, (int)(8 * scale), (int)(4 * scale), new Color(245, 245, 245));
+
+        bresenhamLine(g2, (int)(x + 10 * scale), hipY, (int)(x + 16 * scale), (hipY + rightFootY) / 2, 4);
+        bresenhamLine(g2, (int)(x + 16 * scale), (hipY + rightFootY) / 2, (int)(x + crankW + 4 * scale), rightFootY, 4);
+        fillMidpointEllipse(g2, (int)(x + crankW + 4 * scale), rightFootY, (int)(8 * scale), (int)(4 * scale), new Color(245, 245, 245));
+
+        // 2. Torso: Green Hoodie & Dark Backpack
+        fillMidpointEllipse(g2, (int)(x + 13 * scale), shoulderY + (int)(9 * scale), (int)(9 * scale), (int)(15 * scale), new Color(38, 45, 40));
+
+        g2.setColor(new Color(42, 138, 62));
+        fillMidpointEllipse(g2, (int) x, (shoulderY + hipY) / 2, (int)(19 * scale), (int)(24 * scale), new Color(42, 138, 62));
+        // Double White Stripes across chest
+        g2.setColor(new Color(250, 250, 250));
+        int midTy = (shoulderY + hipY) / 2 - (int)(4 * scale);
+        bresenhamLine(g2, (int)(x - 12 * scale), midTy - (int)(3 * scale), (int)(x + 12 * scale), midTy - (int)(3 * scale), 1);
+        bresenhamLine(g2, (int)(x - 12 * scale), midTy + (int)(1 * scale), (int)(x + 12 * scale), midTy + (int)(1 * scale), 1);
+
+        // 3. Head & Dark Navy Hair (Turned left watching Friend 3)
+        g2.setColor(new Color(36, 122, 54));
+        bresenhamLine(g2, (int) x, shoulderY + (int)(4 * scale), headX, headY + (int)(8 * scale), 3);
+
+        fillMidpointCircle(g2, headX, headY, headR, Color.WHITE);
+        drawAnimeSpikyHair(g2, headX, headY, headR, new Color(25, 28, 38));
+        g2.setColor(INK);
+        midpointCircle(g2, headX, headY, headR);
+
+        // Friendly smiling face looking left
+        g2.setColor(new Color(25, 28, 38));
+        g2.fillOval(headX - 5, headY - 4, (int)(4 * scale), (int)(5 * scale));
+        g2.fillOval(headX + 1, headY - 4, (int)(4 * scale), (int)(5 * scale));
+        fillMidpointCircle(g2, headX - 4, headY - 3, 1, Color.WHITE);
+        fillMidpointCircle(g2, headX + 2, headY - 3, 1, Color.WHITE);
+        bezierCurve(g2, headX - 5, headY + 3, headX - 2, headY + 7, headX + 2, headY + 7, headX + 4, headY + 4, 8);
+        fillMidpointEllipse(g2, headX - 7, headY + 2, 3, 2, new Color(255, 140, 160, 140));
+        fillMidpointEllipse(g2, headX + 6, headY + 2, 3, 2, new Color(255, 140, 160, 140));
+
+        // 4. Bicycle Base
+        drawFrontBicycleBase(g2, x, y, scale, st * 9.0, new Color(36, 92, 180), pedalAngle, tilt);
+
+        // 5. Arms reaching to handlebars (with sleeve stripes)
+        int gripX1 = (int) (x - 34 * scale);
+        int gripX2 = (int) (x + 34 * scale);
+        int gripY = (int) (y - 80 * scale);
+        g2.setColor(new Color(36, 122, 54));
+        bresenhamLine(g2, (int)(x - 15 * scale), shoulderY + (int)(4 * scale), gripX1, gripY, 4);
+        bresenhamLine(g2, (int)(x + 15 * scale), shoulderY + (int)(4 * scale), gripX2, gripY, 4);
+        fillMidpointCircle(g2, gripX1, gripY, (int)(3 * scale), new Color(255, 220, 185));
+        fillMidpointCircle(g2, gripX2, gripY, (int)(3 * scale), new Color(255, 220, 185));
+
+        // 6. Bicycle Cockpit & Basket
+        drawFrontBicycleCockpit(g2, x, y, scale, new Color(36, 92, 180), true, null, tilt);
+    }
+
+    // Dynamic Road Surface Motion: Scrolling dirt ruts and tumbling pebbles (Rushing ground parallax)
+    private void drawBicycleRoadMotion(Graphics2D g2, double st) {
+        // 1. Moving dirt ruts in perspective
+        g2.setColor(new Color(135, 78, 38, 130));
+        for (int i = 0; i < 14; i++) {
+            double rutProg = ((i * 42.0 - st * 280.0) % 330.0);
+            if (rutProg < 0) rutProg += 330.0;
+            int ry = (int) (270 + rutProg);
+            double p = rutProg / 330.0;
+            int rw = (int) (120 + p * 380);
+            int rx = 300 - rw / 2;
+            bresenhamLine(g2, rx + (int)(15 + p * 10), ry, rx + (int)(45 + p * 15), ry + 3, 1);
+            bresenhamLine(g2, rx + rw - (int)(55 + p * 15), ry, rx + rw - (int)(20 + p * 10), ry + 4, 1);
+        }
+
+        // 2. Animated tumbling pebbles on dirt road
+        for (int i = 0; i < 28; i++) {
+            double pxBase = (i * 79) % 460 + 70;
+            double pyProg = ((i * 43.0 - st * 320.0) % 320.0);
+            if (pyProg < 0) pyProg += 320.0;
+            int py = (int) (280 + pyProg);
+            double p = pyProg / 320.0;
+            int px = (int) (300 + (pxBase - 300) * (0.35 + p * 0.85));
+            fillMidpointEllipse(g2, px, py, (int)(2 + p * 2), (int)(1 + p), new Color(115, 68, 35, 160));
+        }
+    }
+
+    // Dynamic Sunset Atmosphere: Komorebi God Rays, Floating Dust Motes & Drifting Leaves
+    private void drawBicycleAtmosphere(Graphics2D g2, double st) {
+        // 1. Radiant Komorebi Sunbeams (Translucent golden shafts of light angling through the canopy)
+        Color rayColor1 = new Color(255, 235, 150, 24);
+        Color rayColor2 = new Color(255, 215, 120, 14);
+
+        int[][] rayPolys = {
+            {-10, 120, 280, 0},   // Ray 1
+            {80, 250, 480, 120},  // Ray 2
+            {280, 440, 600, 360}, // Ray 3
+            {380, 520, 650, 480}  // Ray 4
+        };
+        for (int i = 0; i < rayPolys.length; i++) {
+            double pulse = Math.sin(st * 1.5 + i * 1.2) * 6;
+            int[] rx = {rayPolys[i][0], rayPolys[i][1] + (int) pulse, rayPolys[i][2] + (int) pulse, rayPolys[i][3]};
+            int[] ry = {0, 600, 600, 0};
+            g2.setColor((i % 2 == 0) ? rayColor1 : rayColor2);
+            g2.fillPolygon(new Polygon(rx, ry, 4));
+        }
+
+        // 2. Animated Floating Golden Dust Motes (Speedy wind drift)
+        Random dustRand = new Random(7777);
+        for (int i = 0; i < 35; i++) {
+            double origX = dustRand.nextDouble() * 640 - 20;
+            double origY = 80 + dustRand.nextDouble() * 480;
+            double speed = 40 + dustRand.nextDouble() * 50;
+            double wobble = Math.sin(st * 3.5 + i) * 14;
+
+            double x = (origX + wobble - (st * speed)) % 660;
+            if (x < -20) x += 660;
+            double y = origY - ((st * speed * 0.2) % 400);
+            if (y < 60) y += 400;
+
+            int alpha = (int) (60 + 135 * Math.abs(Math.sin(st * 2.0 + i * 0.4)));
+            Color dustColor = (i % 2 == 0) ?
+                new Color(255, 240, 180, alpha) :
+                new Color(255, 210, 120, alpha);
+            fillMidpointCircle(g2, (int) x, (int) y, (i % 3 == 0) ? 2 : 1, dustColor);
+        }
+
+        // 3. Drifting Leaves tumbling in the riding breeze
+        Random leafRand = new Random(8888);
+        for (int i = 0; i < 14; i++) {
+            double lx = (leafRand.nextDouble() * 640 - (st * 140.0 + i * 45.0)) % 660;
+            if (lx < -30) lx += 660;
+            double ly = 60 + leafRand.nextDouble() * 460 + Math.sin(st * 3.0 + i) * 22;
+            double rot = st * 4.0 + i;
+
+            AffineTransform old = g2.getTransform();
+            g2.translate(lx, ly);
+            g2.rotate(rot);
+            Color leafColor = (i % 2 == 0) ? new Color(115, 175, 52, 210) : new Color(225, 160, 48, 200);
+            fillMidpointEllipse(g2, 0, 0, 5, 2, leafColor);
+            g2.setTransform(old);
+        }
+
+        // 4. Soft Nostalgic Golden Vignette
+        Point2D vigCenter = new Point2D.Float(300.0f, 300.0f);
+        float vigRadius = 430.0f;
+        float[] vigDist = {0.0f, 0.70f, 1.0f};
+        Color[] vigColors = {
+            new Color(0, 0, 0, 0),
+            new Color(40, 18, 5, 20),
+            new Color(25, 10, 2, 95)
+        };
+        RadialGradientPaint vig = new RadialGradientPaint(vigCenter, vigRadius, vigDist, vigColors);
+        g2.setPaint(vig);
+        g2.fillRect(0, 0, 600, 600);
+    }
+
+    // Master Scene 5 Renderer: 4 Friends Riding Bicycles at Sunset Countryside
+    private void drawBicycleScene(Graphics2D g2, double st) {
+        // 1. Warm Sunset Countryside Backdrop (Cached for 60fps)
+        if (bicycleBackdrop == null) bicycleBackdrop = buildBicycleBackdrop();
+        g2.drawImage(bicycleBackdrop, 0, 0, null);
+
+        // 2. Animated Ground Motion (Rushing road surface parallax)
+        drawBicycleRoadMotion(g2, st);
+
+        // Dynamic Bicycle Positions riding forward on the countryside road towards the camera
+        // Friend 2 in Background (Center-Left)
+        double x2 = 285 + Math.sin(st * 1.4) * 8.0;
+        double y2 = 345 + Math.sin(st * 9.6) * 1.5;
+
+        // Friend 1 on Left Foreground (Red Hoodie)
+        double x1 = 165 + Math.sin(st * 1.8) * 12.0;
+        double y1 = 485 + Math.sin(st * 11.0) * 2.0;
+
+        // Friend 4 on Right (Green Hoodie)
+        double x4 = 475 + Math.cos(st * 1.6) * 10.0;
+        double y4 = 470 + Math.sin(st * 10.8) * 1.8;
+
+        // Friend 3 in Foreground Center (Hero "23" White Hoodie - Closest to camera)
+        double x3 = 330 + Math.sin(st * 2.2) * 14.0;
+        double y3 = 505 + Math.sin(st * 11.6) * 2.2;
+
+        // 3. Draw 4 Friends in depth order (Back to front)
+        drawBikerFriend2_BlueJacket(g2, x2, y2, st);
+        drawBikerFriend4_GreenHoodie(g2, x4, y4, st);
+        drawBikerFriend1_RedHoodie(g2, x1, y1, st);
+        drawBikerFriend3_CenterHero23(g2, x3, y3, st);
+
+        // 4. Dynamic Sunset Atmosphere: Komorebi God Rays, Floating Dust & Drifting Leaves
+        drawBicycleAtmosphere(g2, st);
+    }
+
     // ==================================================================
     // 8. MEMORY SCENE 2: EPIC CHILDHOOD TOY SWORD FIGHT (ANIME BATTLE)
     // ==================================================================
@@ -3349,7 +4392,7 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     }
 
     // =========================================================================
-    // 8.5 SCENE 5: COZY MOO KRATHA (THAI BBQ) DINNER AT HOME WITH FAMILY / FRIENDS
+    // SCENE 6 (MEMORY 5): COZY MOO KRATHA (THAI BBQ) DINNER AT HOME WITH FAMILY
     // =========================================================================
 
     private BufferedImage mooKrathaBackdrop;
@@ -4186,7 +5229,7 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         g2.fillRect(0, 0, 600, 600);
     }
 
-    // Master Scene 5 Renderer: Cozy Thai Moo Kratha Dinner at Home
+    // Master Scene 6 Renderer: Cozy Thai Moo Kratha Dinner at Home
     private void drawMooKrathaScene(Graphics2D g2, double st) {
         final int tableY = 380;
         final int potX = 300;
@@ -4216,7 +5259,7 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
     }
 
     // =========================================================================
-    // SCENE 6: WATCHING TV AT HOME WITH FRIENDS (ULTRAMAN VS GODZILLA)
+    // SCENE 5 (MEMORY 4): WATCHING TV AT HOME WITH FRIENDS (ULTRAMAN VS GODZILLA)
     // =========================================================================
 
     // 1. Cozy Living Room Backdrop (Cached for smooth 60fps performance)
@@ -5027,7 +6070,7 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         g2.fillRect(0, 0, 600, 600);
     }
 
-    // Master Scene 6 Renderer: Watching TV at Home (Ultraman vs Godzilla)
+    // Master Scene 5 Renderer: Watching TV at Home (Ultraman vs Godzilla)
     private void drawTVScene(Graphics2D g2, double st) {
         // 1. Cozy Living Room Backdrop (Cached)
         if (livingRoomBackdrop == null) livingRoomBackdrop = buildLivingRoomBackdrop();
@@ -5059,10 +6102,11 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         double a = 1 - Math.abs(t - WARP_INTO_MEMORY) / WARP_RAMP;
         double b = 1 - Math.abs(t - WARP_INTO_SWORD) / WARP_RAMP;
         double c = 1 - Math.abs(t - WARP_INTO_WATER) / WARP_RAMP;
-        double d = 1 - Math.abs(t - WARP_INTO_MOOKRATHA) / WARP_RAMP;
+        double d = 1 - Math.abs(t - WARP_INTO_BIKE) / WARP_RAMP;
         double e = 1 - Math.abs(t - WARP_INTO_TV) / WARP_RAMP;
-        double f = 1 - Math.abs(t - WARP_BACK) / WARP_RAMP;
-        return Math.max(0, Math.max(Math.max(Math.max(a, b), Math.max(c, d)), Math.max(e, f)));
+        double f = 1 - Math.abs(t - WARP_INTO_MOOKRATHA) / WARP_RAMP;
+        double g = 1 - Math.abs(t - WARP_BACK) / WARP_RAMP;
+        return Math.max(0, Math.max(Math.max(Math.max(a, b), Math.max(c, d)), Math.max(Math.max(e, f), g)));
     }
 
     private void drawWarp(Graphics2D g2, double flash, double t) {
@@ -5121,12 +6165,14 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
             drawMemoryScene(g2, t - WARP_INTO_MEMORY);
         } else if (t >= WARP_INTO_SWORD && t < WARP_INTO_WATER) {
             drawSwordFightScene(g2, t - WARP_INTO_SWORD);
-        } else if (t >= WARP_INTO_WATER && t < WARP_INTO_MOOKRATHA) {
+        } else if (t >= WARP_INTO_WATER && t < WARP_INTO_BIKE) {
             drawStreamScene(g2, t - WARP_INTO_WATER);
-        } else if (t >= WARP_INTO_MOOKRATHA && t < WARP_INTO_TV) {
-            drawMooKrathaScene(g2, t - WARP_INTO_MOOKRATHA);
-        } else if (t >= WARP_INTO_TV && t < WARP_BACK) {
+        } else if (t >= WARP_INTO_BIKE && t < WARP_INTO_TV) {
+            drawBicycleScene(g2, t - WARP_INTO_BIKE);
+        } else if (t >= WARP_INTO_TV && t < WARP_INTO_MOOKRATHA) {
             drawTVScene(g2, t - WARP_INTO_TV);
+        } else if (t >= WARP_INTO_MOOKRATHA && t < WARP_BACK) {
+            drawMooKrathaScene(g2, t - WARP_INTO_MOOKRATHA);
         } else {
             drawNightScene(g2, t);
         }
