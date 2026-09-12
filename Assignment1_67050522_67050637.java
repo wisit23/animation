@@ -1,6 +1,7 @@
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
@@ -44,6 +45,15 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
     private BufferedImage bicycleBackdrop = null;
     private BufferedImage livingRoomBackdrop = null;
+    private BufferedImage vignetteOverlay = null;
+    private BufferedImage streamVignetteOverlay = null;
+    private BufferedImage bicycleVignetteOverlay = null;
+    private BufferedImage mooKrathaLampOverlay = null;
+    private BufferedImage mooKrathaVigOverlay = null;
+    private BufferedImage tvLampOverlay = null;
+    private BufferedImage tvVigOverlay = null;
+    private BufferedImage tvGlowBlueOverlay = null;
+    private BufferedImage tvGlowOrangeOverlay = null;
 
     private static final int NUM_STARS = 260;
     private static final double[] starX = new double[NUM_STARS];
@@ -426,7 +436,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         return image;
     }
 
-    private void bezierCurve(Graphics g, double x1, double y1, double x2, double y2,
+    private static void bezierCurve(Graphics g, double x1, double y1, double x2, double y2,
                               double x3, double y3, double x4, double y4, int steps) {
         int prevX = (int) Math.round(x1);
         int prevY = (int) Math.round(y1);
@@ -446,9 +456,325 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         }
     }
 
-    private void bezierCurve(Graphics g, double x1, double y1, double x2, double y2,
+    private static void bezierCurve(Graphics g, double x1, double y1, double x2, double y2,
                               double x3, double y3, double x4, double y4) {
         bezierCurve(g, x1, y1, x2, y2, x3, y3, x4, y4, 24);
+    }
+
+    // =========================================================================
+    // 100% CUSTOM CG GRADIENT & SHADING ENGINES (Scanline LERP & Single-Pass Euclidean Shader)
+    // =========================================================================
+
+    private static int clampColor(int val) {
+        return Math.min(255, Math.max(0, val));
+    }
+
+    private static Color interpolateColor(Color c1, Color c2, double t) {
+        t = Math.max(0.0, Math.min(1.0, t));
+        int r = clampColor((int) Math.round(c1.getRed() + t * (c2.getRed() - c1.getRed())));
+        int g = clampColor((int) Math.round(c1.getGreen() + t * (c2.getGreen() - c1.getGreen())));
+        int b = clampColor((int) Math.round(c1.getBlue() + t * (c2.getBlue() - c1.getBlue())));
+        int a = clampColor((int) Math.round(c1.getAlpha() + t * (c2.getAlpha() - c1.getAlpha())));
+        return new Color(r, g, b, a);
+    }
+
+    private static Color getMultiStopGradientColor(Color[] colors, float[] fractions, double t) {
+        if (colors == null || colors.length == 0) return Color.BLACK;
+        if (colors.length == 1 || t <= fractions[0]) return colors[0];
+        if (t >= fractions[fractions.length - 1]) return colors[colors.length - 1];
+
+        for (int i = 0; i < fractions.length - 1; i++) {
+            if (t >= fractions[i] && t <= fractions[i + 1]) {
+                double span = fractions[i + 1] - fractions[i];
+                double localT = (span <= 0.00001) ? 0.0 : (t - fractions[i]) / span;
+                return interpolateColor(colors[i], colors[i + 1], localT);
+            }
+        }
+        return colors[colors.length - 1];
+    }
+
+    private static void fillLinearGradientVertical(Graphics g, int x, int y, int width, int height, Color c1, Color c2) {
+        if (width <= 0 || height <= 0) return;
+        for (int row = 0; row < height; row++) {
+            double t = (height <= 1) ? 0.0 : (double) row / (height - 1);
+            Color col = interpolateColor(c1, c2, t);
+            g.setColor(col);
+            paintSpan(g, x, y + row, width);
+        }
+    }
+
+    private static void fillLinearGradientVertical(Graphics g, int x, int y, int width, int height, Color[] colors, float[] fractions) {
+        if (width <= 0 || height <= 0) return;
+        for (int row = 0; row < height; row++) {
+            double t = (height <= 1) ? 0.0 : (double) row / (height - 1);
+            Color col = getMultiStopGradientColor(colors, fractions, t);
+            g.setColor(col);
+            paintSpan(g, x, y + row, width);
+        }
+    }
+
+    private static void fillPolygonLinearGradient(Graphics g, int[] xPoints, int[] yPoints, int nPoints, int yStart, int yEnd, Color[] colors, float[] fractions) {
+        if (nPoints < 3) return;
+        int minY = yPoints[0];
+        int maxY = yPoints[0];
+        for (int i = 1; i < nPoints; i++) {
+            if (yPoints[i] < minY) minY = yPoints[i];
+            if (yPoints[i] > maxY) maxY = yPoints[i];
+        }
+
+        if (yStart == yEnd) {
+            yStart = minY;
+            yEnd = maxY;
+        }
+
+        for (int y = minY; y <= maxY; y++) {
+            java.util.List<Integer> xIntersections = new java.util.ArrayList<>();
+            for (int i = 0; i < nPoints; i++) {
+                int nextIndex = (i + 1) % nPoints;
+                int x1 = xPoints[i];
+                int y1 = yPoints[i];
+                int x2 = xPoints[nextIndex];
+                int y2 = yPoints[nextIndex];
+
+                if (y1 == y2) continue;
+                if (y >= Math.min(y1, y2) && y < Math.max(y1, y2)) {
+                    int x = x1 + (int) Math.round((double) (y - y1) * (x2 - x1) / (y2 - y1));
+                    xIntersections.add(x);
+                }
+            }
+            java.util.Collections.sort(xIntersections);
+            double t = (yEnd == yStart) ? 0.0 : (double) (y - yStart) / (yEnd - yStart);
+            Color col = getMultiStopGradientColor(colors, fractions, t);
+            g.setColor(col);
+            for (int i = 0; i < xIntersections.size() - 1; i += 2) {
+                int xLeft = xIntersections.get(i);
+                int xRight = xIntersections.get(i + 1);
+                paintSpan(g, xLeft, y, xRight - xLeft + 1);
+            }
+        }
+    }
+
+    private static void fillPolygonLinearGradient(Graphics g, Polygon p, int yStart, int yEnd, Color[] colors, float[] fractions) {
+        fillPolygonLinearGradient(g, p.xpoints, p.ypoints, p.npoints, yStart, yEnd, colors, fractions);
+    }
+
+    private static void fillShapeLinearGradient(Graphics2D g, Shape shape, int yStart, int yEnd, Color[] colors, float[] fractions) {
+        java.util.List<Point> points = new java.util.ArrayList<>();
+        PathIterator path = shape.getPathIterator(null, 0.75);
+        double[] coordinates = new double[6];
+        while (!path.isDone()) {
+            int type = path.currentSegment(coordinates);
+            if (type == PathIterator.SEG_MOVETO && !points.isEmpty()) {
+                fillPointPolygonGradient(g, points, yStart, yEnd, colors, fractions);
+                points.clear();
+            }
+            if (type == PathIterator.SEG_MOVETO || type == PathIterator.SEG_LINETO) {
+                points.add(new Point((int) Math.round(coordinates[0]), (int) Math.round(coordinates[1])));
+            } else if (type == PathIterator.SEG_CLOSE && !points.isEmpty()) {
+                fillPointPolygonGradient(g, points, yStart, yEnd, colors, fractions);
+                points.clear();
+            }
+            path.next();
+        }
+        if (!points.isEmpty()) fillPointPolygonGradient(g, points, yStart, yEnd, colors, fractions);
+    }
+
+    private static void fillPointPolygonGradient(Graphics g, java.util.List<Point> points, int yStart, int yEnd, Color[] colors, float[] fractions) {
+        int[] xPoints = new int[points.size()];
+        int[] yPoints = new int[points.size()];
+        for (int i = 0; i < points.size(); i++) {
+            xPoints[i] = points.get(i).x;
+            yPoints[i] = points.get(i).y;
+        }
+        fillPolygonLinearGradient(g, xPoints, yPoints, points.size(), yStart, yEnd, colors, fractions);
+    }
+
+    private static void fillRoundedRectangleLinearGradient(Graphics g, int x, int y, int width, int height, int arcW, int arcH, Color[] colors, float[] fractions) {
+        for (int row = 0; row < height; row++) {
+            double t = (height <= 1) ? 0.0 : (double) row / (height - 1);
+            Color col = getMultiStopGradientColor(colors, fractions, t);
+            g.setColor(col);
+            int currentY = y + row;
+            int cornerOffset = 0;
+            if (row < arcH / 2) {
+                double dy = (arcH / 2.0 - row) / (arcH / 2.0);
+                cornerOffset = (int) Math.round((arcW / 2.0) * (1.0 - Math.sqrt(Math.max(0, 1.0 - dy * dy))));
+            } else if (row > height - arcH / 2) {
+                double dy = (row - (height - arcH / 2.0)) / (arcH / 2.0);
+                cornerOffset = (int) Math.round((arcW / 2.0) * (1.0 - Math.sqrt(Math.max(0, 1.0 - dy * dy))));
+            }
+            paintSpan(g, x + cornerOffset, currentY, width - 2 * cornerOffset);
+        }
+    }
+
+    private static void drawLinearGradientLine(Graphics g, int x1, int y1, int x2, int y2, Color c1, Color c2) {
+        int dx = Math.abs(x2 - x1);
+        int dy = Math.abs(y2 - y1);
+        int totalSteps = Math.max(dx, dy);
+        int stepX = x1 < x2 ? 1 : -1;
+        int stepY = y1 < y2 ? 1 : -1;
+        int error = dx - dy;
+        int currentStep = 0;
+
+        int curX = x1;
+        int curY = y1;
+        while (true) {
+            double t = (totalSteps <= 0) ? 0.0 : (double) currentStep / totalSteps;
+            g.setColor(interpolateColor(c1, c2, t));
+            plotPixel(g, curX, curY);
+            if (curX == x2 && curY == y2) return;
+            int doubledError = error * 2;
+            if (doubledError > -dy) {
+                error -= dy;
+                curX += stepX;
+            }
+            if (doubledError < dx) {
+                error += dx;
+                curY += stepY;
+            }
+            currentStep++;
+        }
+    }
+
+    private static BufferedImage createRadialGradientImage(int width, int height, int cx, int cy, float radius, Color[] colors, float[] fractions) {
+        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        int[] data = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
+        float rSq = radius * radius;
+        for (int y = 0; y < height; y++) {
+            float dy = y - cy;
+            float dySq = dy * dy;
+            int rowOffset = y * width;
+            for (int x = 0; x < width; x++) {
+                float dx = x - cx;
+                float distSq = dx * dx + dySq;
+                if (distSq <= rSq) {
+                    float t = (float) Math.sqrt(distSq) / radius;
+                    Color c = getMultiStopGradientColor(colors, fractions, t);
+                    data[rowOffset + x] = (c.getAlpha() << 24) | (c.getRed() << 16) | (c.getGreen() << 8) | c.getBlue();
+                } else {
+                    Color c = colors[colors.length - 1];
+                    data[rowOffset + x] = (c.getAlpha() << 24) | (c.getRed() << 16) | (c.getGreen() << 8) | c.getBlue();
+                }
+            }
+        }
+        return img;
+    }
+
+    // =========================================================================
+    // 100% CUSTOM VECTOR TEXT ENGINES (Drawn with bresenhamLine & bezierCurve)
+    // =========================================================================
+
+    private static void drawVectorStrokeS(Graphics g, int x, int y, int w, int h, int thickness) {
+        bezierCurve(g, x + w, y + 2, x + w * 0.15, y, x, y + h * 0.45, x + w * 0.5, y + h * 0.5, 12);
+        bezierCurve(g, x + w * 0.5, y + h * 0.5, x + w, y + h * 0.55, x + w * 0.85, y + h, x, y + h - 2, 12);
+        for (int d = 1; d <= thickness; d++) {
+            bezierCurve(g, x + w + d, y + 2, x + w * 0.15 + d, y, x + d, y + h * 0.45, x + w * 0.5 + d, y + h * 0.5, 12);
+            bezierCurve(g, x + w * 0.5 + d, y + h * 0.5, x + w + d, y + h * 0.55, x + w * 0.85 + d, y + h, x + d, y + h - 2, 12);
+        }
+    }
+
+    private static void drawVectorStrokeI(Graphics g, int x, int y, int w, int h, int thickness) {
+        int cx = x + w / 2;
+        bresenhamLine(g, cx, y, cx, y + h, thickness);
+        bresenhamLine(g, x + 2, y, x + w - 2, y, thickness);
+        bresenhamLine(g, x + 2, y + h, x + w - 2, y + h, thickness);
+    }
+
+    private static void drawVectorStrokeU(Graphics g, int x, int y, int w, int h, int thickness) {
+        int r = (int) (h * 0.35);
+        bresenhamLine(g, x + 2, y, x + 2, y + h - r, thickness);
+        bresenhamLine(g, x + w - 2, y, x + w - 2, y + h - r, thickness);
+        bezierCurve(g, x + 2, y + h - r, x + 2, y + h, x + w - 2, y + h, x + w - 2, y + h - r, 12);
+        for (int d = 1; d <= thickness; d++) {
+            bezierCurve(g, x + 2 + d, y + h - r, x + 2 + d, y + h, x + w - 2 + d, y + h, x + w - 2 + d, y + h - r, 12);
+        }
+    }
+
+    private static void drawVectorStrokeExcl(Graphics g, int x, int y, int w, int h, int thickness) {
+        int cx = x + w / 2;
+        bresenhamLine(g, cx, y, cx, y + (int) (h * 0.68), thickness + 1);
+        fillMidpointCircle(g, cx, y + h - 2, Math.max(2, thickness + 2), g.getColor());
+    }
+
+    private static void drawVectorStrokeB(Graphics g, int x, int y, int w, int h, int thickness) {
+        bresenhamLine(g, x + 2, y, x + 2, y + h, thickness + 1);
+        int midY = y + h / 2;
+        bezierCurve(g, x + 2, y, x + w, y, x + w, midY, x + 2, midY, 12);
+        bezierCurve(g, x + 2, midY, x + w + 2, midY, x + w + 2, y + h, x + 2, y + h, 12);
+        for (int d = 1; d <= thickness; d++) {
+            bezierCurve(g, x + 2, y + d, x + w + d, y + d, x + w + d, midY, x + 2, midY, 12);
+            bezierCurve(g, x + 2, midY + d, x + w + 2 + d, midY + d, x + w + 2 + d, y + h, x + 2, y + h, 12);
+        }
+    }
+
+    private static void drawVectorStrokeO(Graphics g, int x, int y, int w, int h, int thickness) {
+        int cx = x + w / 2;
+        int cy = y + h / 2;
+        midpointEllipse(g, cx, cy, w / 2 - 2, h / 2 - 1);
+        for (int d = 1; d <= thickness; d++) {
+            midpointEllipse(g, cx, cy, Math.max(1, w / 2 - 2 + d), Math.max(1, h / 2 - 1 + d));
+        }
+    }
+
+    private static void drawVectorStrokeN(Graphics g, int x, int y, int w, int h, int thickness) {
+        bresenhamLine(g, x + 2, y + h, x + 2, y, thickness);
+        bresenhamLine(g, x + 2, y, x + w - 2, y + h, thickness + 1);
+        bresenhamLine(g, x + w - 2, y + h, x + w - 2, y, thickness);
+    }
+
+    private static void drawVectorStrokeK(Graphics g, int x, int y, int w, int h, int thickness) {
+        bresenhamLine(g, x + 2, y, x + 2, y + h, thickness);
+        int midY = y + h / 2;
+        bresenhamLine(g, x + w - 2, y, x + 2, midY, thickness);
+        bresenhamLine(g, x + 3, midY, x + w - 2, y + h, thickness);
+    }
+
+    private static void drawVectorWordSIUUU(Graphics g, int x, int y, Color outline, Color fill) {
+        int w = 15, h = 26, spacing = 19;
+        // Outline shadow
+        g.setColor(outline);
+        for (int ox = -2; ox <= 2; ox++) {
+            for (int oy = -2; oy <= 2; oy++) {
+                if (ox == 0 && oy == 0) continue;
+                drawVectorStrokeS(g, x + ox, y + oy, w, h, 1);
+                drawVectorStrokeI(g, x + spacing + ox, y + oy, w, h, 1);
+                drawVectorStrokeU(g, x + spacing * 2 + ox, y + oy, w, h, 1);
+                drawVectorStrokeU(g, x + spacing * 3 + ox, y + oy, w, h, 1);
+                drawVectorStrokeU(g, x + spacing * 4 + ox, y + oy, w, h, 1);
+                drawVectorStrokeExcl(g, x + spacing * 5 + ox, y + oy, 10, h, 1);
+            }
+        }
+        // Inner fill
+        g.setColor(fill);
+        drawVectorStrokeS(g, x, y, w, h, 1);
+        drawVectorStrokeI(g, x + spacing, y, w, h, 1);
+        drawVectorStrokeU(g, x + spacing * 2, y, w, h, 1);
+        drawVectorStrokeU(g, x + spacing * 3, y, w, h, 1);
+        drawVectorStrokeU(g, x + spacing * 4, y, w, h, 1);
+        drawVectorStrokeExcl(g, x + spacing * 5, y, 10, h, 1);
+    }
+
+    private static void drawVectorWordBONK(Graphics g, int x, int y, Color outline, Color fill) {
+        int w = 16, h = 24, spacing = 20;
+        // Outline shadow
+        g.setColor(outline);
+        for (int ox = -2; ox <= 2; ox++) {
+            for (int oy = -2; oy <= 2; oy++) {
+                if (ox == 0 && oy == 0) continue;
+                drawVectorStrokeB(g, x + ox, y + oy, w, h, 1);
+                drawVectorStrokeO(g, x + spacing + ox, y + oy, w, h, 1);
+                drawVectorStrokeN(g, x + spacing * 2 + ox, y + oy, w, h, 1);
+                drawVectorStrokeK(g, x + spacing * 3 + ox, y + oy, w, h, 1);
+                drawVectorStrokeExcl(g, x + spacing * 4 + ox, y + oy, 10, h, 1);
+            }
+        }
+        // Inner fill
+        g.setColor(fill);
+        drawVectorStrokeB(g, x, y, w, h, 1);
+        drawVectorStrokeO(g, x + spacing, y, w, h, 1);
+        drawVectorStrokeN(g, x + spacing * 2, y, w, h, 1);
+        drawVectorStrokeK(g, x + spacing * 3, y, w, h, 1);
+        drawVectorStrokeExcl(g, x + spacing * 4, y, 10, h, 1);
     }
 
     private static double smoothStep(double value) {
@@ -618,14 +944,11 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillShapeScanline(g2d, botEyelid);
 
         g2d.setColor(new Color(0, 0, 0, (int) (140 * closure)));
-        g2d.setStroke(new BasicStroke(6.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         drawShapeLines(g2d, topEyelid);
         drawShapeLines(g2d, botEyelid);
     }
 
     public void drawSkyBackground(Graphics2D g2d, double time) {
-        Point2D start = new Point2D.Float(300, 0);
-        Point2D end = new Point2D.Float(300, 600);
         float[] dist = {0.0f, 0.4f, 0.75f, 1.0f};
         Color[] colors = {
             new Color(2, 6, 20),
@@ -633,9 +956,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             new Color(16, 45, 100),
             new Color(28, 70, 130)
         };
-        LinearGradientPaint skyGrad = new LinearGradientPaint(start, end, dist, colors);
-        g2d.setPaint(skyGrad);
-        fillRectangle(g2d, -400, -400, 1400, 1400);
+        fillLinearGradientVertical(g2d, 0, 0, 600, 600, colors, dist);
     }
 
     public void drawMilkyWay(Graphics2D g2d, double time) {
@@ -660,11 +981,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             band.curveTo(100, w * 0.3, -200, w * 0.7, -600, w / 2.0);
             band.closePath();
 
-            g2d.setPaint(new RadialGradientPaint(
-                new Point2D.Double(0, 0), 550f,
-                new float[]{0f, 0.5f, 1f},
-                new Color[]{bandColors[i], new Color(bandColors[i].getRed(), bandColors[i].getGreen(), bandColors[i].getBlue(), bandColors[i].getAlpha() / 2), new Color(0, 0, 0, 0)}
-            ));
+            g2d.setColor(bandColors[i]);
             fillShapeScanline(g2d, band);
         }
 
@@ -723,7 +1040,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
             if (r <= 1) {
                 g2d.setColor(c);
-                fillRectangle(g2d, x, y, 1, 1);
+                plotPixel(g2d, x, y);
             } else {
                 fillMidpointCircle(g2d, x, y, r, c);
                 if (starSize[i] > 2.0 && brightness > 0.75) {
@@ -753,12 +1070,9 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
             float alpha = (float) Math.sin(progress * Math.PI);
 
-            Point2D pHead = new Point2D.Double(headX, headY);
-            Point2D pTail = new Point2D.Double(tailX, tailY);
-            g2d.setPaint(new LinearGradientPaint(pHead, pTail, new float[]{0f, 1f},
-                    new Color[]{new Color(255, 255, 255, (int) (alpha * 240)), new Color(160, 210, 255, 0)}));
-            g2d.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            drawShapeLines(g2d, new Line2D.Double(pHead, pTail));
+            drawLinearGradientLine(g2d, (int) Math.round(headX), (int) Math.round(headY),
+                (int) Math.round(tailX), (int) Math.round(tailY),
+                new Color(255, 255, 255, (int) (alpha * 240)), new Color(160, 210, 255, 0));
 
             fillMidpointCircle(g2d, (int) headX, (int) headY, 3, new Color(255, 255, 255, (int) (alpha * 255)));
             fillMidpointCircle(g2d, (int) headX, (int) headY, 6, new Color(180, 220, 255, (int) (alpha * 120)));
@@ -774,13 +1088,9 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         mountains.lineTo(-60, 600);
         mountains.closePath();
 
-        LinearGradientPaint mtnGrad = new LinearGradientPaint(
-            new Point2D.Float(0, 410), new Point2D.Float(0, 520),
-            new float[]{0f, 1f},
-            new Color[]{new Color(14, 32, 68, 220), new Color(7, 18, 42, 245)}
-        );
-        g2d.setPaint(mtnGrad);
-        fillShapeScanline(g2d, mountains);
+        float[] dist = {0.0f, 1.0f};
+        Color[] colors = {new Color(14, 32, 68, 220), new Color(7, 18, 42, 245)};
+        fillShapeLinearGradient(g2d, mountains, 410, 520, colors, dist);
     }
 
     public void drawGrassyHill(Graphics2D g2d, double time) {
@@ -791,13 +1101,9 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         hill.lineTo(-60, 650);
         hill.closePath();
 
-        LinearGradientPaint hillGrad = new LinearGradientPaint(
-            new Point2D.Float(0, 450), new Point2D.Float(0, 600),
-            new float[]{0f, 0.4f, 1.0f},
-            new Color[]{new Color(6, 24, 34), new Color(4, 16, 22), new Color(2, 8, 12)}
-        );
-        g2d.setPaint(hillGrad);
-        fillShapeScanline(g2d, hill);
+        float[] dist = {0.0f, 0.4f, 1.0f};
+        Color[] colors = {new Color(6, 24, 34), new Color(4, 16, 22), new Color(2, 8, 12)};
+        fillShapeLinearGradient(g2d, hill, 450, 600, colors, dist);
     }
 
     public void drawForegroundFlowersAndGrass(Graphics2D g2d, double time) {
@@ -835,13 +1141,14 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         g2d.rotate(rotation);
         g2d.scale(scale, scale);
 
-        int numPetals = 8;
-        Color petalColor = new Color(220, 235, 250, 210);
-        for (int p = 0; p < numPetals; p++) {
-            double angle = p * (2 * Math.PI / numPetals);
-            int px = (int) (Math.cos(angle) * 7);
-            int py = (int) (Math.sin(angle) * 7);
-            fillMidpointEllipse(g2d, px, py, 3, 5, petalColor);
+        g2d.setColor(new Color(60, 110, 45));
+        bresenhamLine(g2d, 0, 0, (int) (rotation * 8), 28, 1);
+
+        for (int p = 0; p < 12; p++) {
+            double ang = p * (Math.PI * 2 / 12);
+            int px = (int) (Math.cos(ang) * 9);
+            int py = (int) (Math.sin(ang) * 9);
+            fillMidpointEllipse(g2d, px, py, 4, 3, new Color(245, 245, 250, 230));
         }
 
         fillMidpointCircle(g2d, 0, 0, 4, new Color(255, 215, 80, 240));
@@ -851,17 +1158,16 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     public void drawVignette(Graphics2D g2d) {
-        Point2D center = new Point2D.Float(300.0f, 300.0f);
-        float radius = 420.0f;
-        float[] dist = {0.0f, 0.65f, 1.0f};
-        Color[] colors = {
-            new Color(0, 0, 0, 0),
-            new Color(0, 5, 15, 40),
-            new Color(0, 3, 10, 180)
-        };
-        RadialGradientPaint p = new RadialGradientPaint(center, radius, dist, colors);
-        g2d.setPaint(p);
-        fillRectangle(g2d, 0, 0, 600, 600);
+        if (vignetteOverlay == null) {
+            float[] dist = {0.0f, 0.65f, 1.0f};
+            Color[] colors = {
+                new Color(0, 0, 0, 0),
+                new Color(0, 5, 15, 40),
+                new Color(0, 3, 10, 180)
+            };
+            vignetteOverlay = createRadialGradientImage(600, 600, 300, 300, 420f, colors, dist);
+        }
+        g2d.drawImage(vignetteOverlay, 0, 0, null);
     }
 
     private static final Color GRASS_GREEN = new Color(55, 95, 48);
@@ -1124,19 +1430,16 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         Graphics2D bg = img.createGraphics();
         bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        GradientPaint sky = new GradientPaint(0, 0, new Color(250, 200, 120),
-                                              0, 400, new Color(255, 236, 190));
-        bg.setPaint(sky);
-        fillRectangle(bg, 0, 0, 600, 400);
+        fillLinearGradientVertical(bg, 0, 0, 600, 400, new Color(250, 200, 120), new Color(255, 236, 190));
 
-        RadialGradientPaint halo = new RadialGradientPaint(
-            new Point(470, 130), 130f,
-            new float[]{0f, 0.45f, 1f},
-            new Color[]{new Color(255, 245, 200, 200),
-                        new Color(255, 225, 150, 90),
-                        new Color(255, 220, 140, 0)});
-        bg.setPaint(halo);
-        fillEllipse(bg, 340, 0, 260, 260);
+        float[] haloDist = {0f, 0.45f, 1f};
+        Color[] haloColors = {
+            new Color(255, 245, 200, 200),
+            new Color(255, 225, 150, 90),
+            new Color(255, 220, 140, 0)
+        };
+        BufferedImage sunHalo = createRadialGradientImage(600, 600, 470, 130, 130f, haloColors, haloDist);
+        bg.drawImage(sunHalo, 0, 0, null);
         bg.setColor(new Color(255, 250, 225));
         fillEllipse(bg, 470 - 34, 130 - 34, 68, 68);
 
@@ -1145,10 +1448,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillEllipse(bg, 130, 352, 330, 150);
         fillEllipse(bg, 300, 342, 460, 160);
 
-        GradientPaint field = new GradientPaint(0, 395, new Color(126, 176, 88),
-                                                0, 600, new Color(86, 138, 62));
-        bg.setPaint(field);
-        fillRectangle(bg, 0, 395, 600, 205);
+        fillLinearGradientVertical(bg, 0, 395, 600, 205, new Color(126, 176, 88), new Color(86, 138, 62));
 
         bg.dispose();
         return img;
@@ -1492,36 +1792,18 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             g2.translate(textCenterX, textCenterY);
             g2.scale(textPop * bounceScale, textPop * bounceScale);
 
-            String siuText = "SIUUU!";
-            Font font = new Font("Impact", Font.BOLD, 28);
-            g2.setFont(font);
-            FontMetrics fm = g2.getFontMetrics();
-            int tw = fm.stringWidth(siuText);
-            int th = fm.getAscent();
+            int totalW = 19 * 5 + 10;
+            int tx = -totalW / 2;
+            int ty = -14;
 
-            int tx = -tw / 2;
-            int ty = th / 2 - 4;
-
-            g2.setColor(new Color(20, 20, 20));
-            int[] ox = {-2, 0, 2, -2, 2, -2, 0, 2, -3, 3, 0, 0};
-            int[] oy = {-2, -2, -2, 0, 0, 2, 2, 2, 0, 0, -3, 3};
-            for (int i = 0; i < ox.length; i++) {
-                g2.drawString(siuText, tx + ox[i], ty + oy[i]);
-            }
-
-            GradientPaint goldGrad = new GradientPaint(
-                0, ty - th, new Color(255, 255, 140),
-                0, ty, new Color(255, 195, 20)
-            );
-            g2.setPaint(goldGrad);
-            g2.drawString(siuText, tx, ty);
+            drawVectorWordSIUUU(g2, tx, ty, new Color(20, 20, 20), new Color(255, 215, 30));
 
             if (landTime < 0.6) {
                 double spkAlpha = Math.max(0, 1.0 - landTime / 0.6);
                 g2.setColor(new Color(255, 240, 100, (int) (240 * spkAlpha)));
-                fillEllipse(g2, tx - 12, ty - th / 2, 5, 5);
-                fillEllipse(g2, tx + tw + 6, ty - th / 2 - 4, 6, 6);
-                fillEllipse(g2, tx + tw / 2 + 10, ty - th - 6, 4, 4);
+                fillEllipse(g2, tx - 12, ty + 10, 5, 5);
+                fillEllipse(g2, tx + totalW + 6, ty + 8, 6, 6);
+                fillEllipse(g2, tx + totalW / 2 + 10, ty - 8, 4, 4);
             }
 
             g2.setTransform(oldTxtTx);
@@ -1708,18 +1990,14 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         bg.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-        LinearGradientPaint skyGrad = new LinearGradientPaint(
-            new Point2D.Float(100, 0), new Point2D.Float(300, 360),
-            new float[]{0.0f, 0.45f, 0.85f, 1.0f},
-            new Color[]{
-                new Color(225, 248, 185),
-                new Color(175, 228, 140),
-                new Color(105, 180, 90),
-                new Color(60, 135, 68)
-            }
-        );
-        bg.setPaint(skyGrad);
-        fillRectangle(bg, 0, 0, 600, 600);
+        float[] skyDist = {0.0f, 0.45f, 0.85f, 1.0f};
+        Color[] skyColors = {
+            new Color(225, 248, 185),
+            new Color(175, 228, 140),
+            new Color(105, 180, 90),
+            new Color(60, 135, 68)
+        };
+        fillLinearGradientVertical(bg, 0, 0, 600, 600, skyColors, skyDist);
 
         bg.setColor(new Color(18, 56, 32, 230));
         fillEllipse(bg, -100, -60, 320, 220);
@@ -1787,13 +2065,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillEllipse(bg, 20, 100, 110, 75);
         fillEllipse(bg, 465, 75, 115, 80);
 
-        LinearGradientPaint bankGrad = new LinearGradientPaint(
-            new Point2D.Float(0, 310), new Point2D.Float(0, 380),
-            new float[]{0.0f, 0.5f, 1.0f},
-            new Color[]{new Color(50, 75, 48), new Color(72, 92, 62), new Color(42, 62, 52)}
-        );
-        bg.setPaint(bankGrad);
-        fillRectangle(bg, 0, 315, 600, 85);
+        float[] bankDist = {0.0f, 0.5f, 1.0f};
+        Color[] bankColors = {
+            new Color(50, 75, 48),
+            new Color(72, 92, 62),
+            new Color(42, 62, 52)
+        };
+        fillLinearGradientVertical(bg, 0, 315, 600, 85, bankColors, bankDist);
 
         fillMossyBoulder(bg, -25, 335, 140, 68, new Color(75, 85, 76), new Color(60, 130, 55));
         fillMossyBoulder(bg, 75, 345, 95, 48, new Color(85, 98, 88), new Color(72, 145, 65));
@@ -1847,17 +2125,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             beam.lineTo(x2, y2);
             beam.closePath();
 
-            LinearGradientPaint beamGrad = new LinearGradientPaint(
-                new Point2D.Float(x1, y1), new Point2D.Float(x2, y2),
-                new float[]{0.0f, 0.6f, 1.0f},
-                new Color[]{
-                    new Color(255, 252, 200, alphaTop),
-                    new Color(245, 240, 160, (alphaTop + alphaBottom) / 2),
-                    new Color(220, 245, 140, alphaBottom)
-                }
-            );
-            g2.setPaint(beamGrad);
-            fillShapeScanline(g2, beam);
+            float[] beamDist = {0.0f, 0.6f, 1.0f};
+            Color[] beamColors = {
+                new Color(255, 252, 200, alphaTop),
+                new Color(245, 240, 160, (alphaTop + alphaBottom) / 2),
+                new Color(220, 245, 140, alphaBottom)
+            };
+            fillShapeLinearGradient(g2, beam, y1, y2, beamColors, beamDist);
         }
 
         Random sparkRand = new Random(404);
@@ -1877,18 +2151,14 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     private void drawRiverbed(Graphics2D g2, int waterY) {
-        LinearGradientPaint waterBed = new LinearGradientPaint(
-            new Point2D.Float(300, waterY), new Point2D.Float(300, 600),
-            new float[]{0.0f, 0.35f, 0.75f, 1.0f},
-            new Color[]{
-                new Color(45, 130, 145),
-                new Color(32, 110, 130),
-                new Color(24, 88, 112),
-                new Color(18, 65, 90)
-            }
-        );
-        g2.setPaint(waterBed);
-        fillRectangle(g2, 0, waterY, 600, 600 - waterY);
+        float[] bedDist = {0.0f, 0.35f, 0.75f, 1.0f};
+        Color[] bedColors = {
+            new Color(45, 130, 145),
+            new Color(32, 110, 130),
+            new Color(24, 88, 112),
+            new Color(18, 65, 90)
+        };
+        fillLinearGradientVertical(g2, 0, waterY, 600, 600 - waterY, bedColors, bedDist);
 
         Random pebRand = new Random(888);
         for (int i = 0; i < 45; i++) {
@@ -1905,18 +2175,14 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     private void drawWaterSurface(Graphics2D g2, int waterY, double st) {
-        LinearGradientPaint waterLayer = new LinearGradientPaint(
-            new Point2D.Float(300, waterY), new Point2D.Float(300, 600),
-            new float[]{0.0f, 0.35f, 0.8f, 1.0f},
-            new Color[]{
-                new Color(90, 205, 230, 130),
-                new Color(45, 165, 195, 160),
-                new Color(28, 130, 165, 195),
-                new Color(18, 85, 120, 215)
-            }
-        );
-        g2.setPaint(waterLayer);
-        fillRectangle(g2, 0, waterY, 600, 600 - waterY);
+        float[] waterDist = {0.0f, 0.35f, 0.8f, 1.0f};
+        Color[] waterColors = {
+            new Color(90, 205, 230, 130),
+            new Color(45, 165, 195, 160),
+            new Color(28, 130, 165, 195),
+            new Color(18, 85, 120, 215)
+        };
+        fillLinearGradientVertical(g2, 0, waterY, 600, 600 - waterY, waterColors, waterDist);
 
         for (int i = 0; i < 16; i++) {
             double cx = 30 + (i * 73) % 540;
@@ -2278,17 +2544,16 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             bezierCurve(g2, rx, ry, rx - 14, ry - 20, rx - 24, ry - 26, rx - 34, ry - 14, 2);
         }
 
-        Point2D center = new Point2D.Float(300.0f, 300.0f);
-        float radius = 430.0f;
-        float[] dist = {0.0f, 0.70f, 1.0f};
-        Color[] colors = {
-            new Color(0, 0, 0, 0),
-            new Color(10, 30, 15, 25),
-            new Color(5, 20, 10, 110)
-        };
-        RadialGradientPaint vig = new RadialGradientPaint(center, radius, dist, colors);
-        g2.setPaint(vig);
-        fillRectangle(g2, 0, 0, 600, 600);
+        if (streamVignetteOverlay == null) {
+            float[] dist = {0.0f, 0.70f, 1.0f};
+            Color[] colors = {
+                new Color(0, 0, 0, 0),
+                new Color(10, 30, 15, 25),
+                new Color(5, 20, 10, 110)
+            };
+            streamVignetteOverlay = createRadialGradientImage(600, 600, 300, 300, 430f, colors, dist);
+        }
+        g2.drawImage(streamVignetteOverlay, 0, 0, null);
     }
 
     private void drawStreamScene(Graphics2D g2, double st) {
@@ -2321,18 +2586,14 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         bg.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-        LinearGradientPaint skyGrad = new LinearGradientPaint(
-            new Point2D.Float(300, 0), new Point2D.Float(300, 320),
-            new float[]{0.0f, 0.35f, 0.70f, 1.0f},
-            new Color[]{
-                new Color(195, 80, 48),
-                new Color(245, 135, 42),
-                new Color(255, 188, 72),
-                new Color(255, 232, 142)
-            }
-        );
-        bg.setPaint(skyGrad);
-        fillRectangle(bg, 0, 0, 600, 320);
+        float[] skyDist = {0.0f, 0.35f, 0.70f, 1.0f};
+        Color[] skyColors = {
+            new Color(195, 80, 48),
+            new Color(245, 135, 42),
+            new Color(255, 188, 72),
+            new Color(255, 232, 142)
+        };
+        fillLinearGradientVertical(bg, 0, 0, 600, 320, skyColors, skyDist);
 
         int sunX = 410, sunY = 175, sunR = 38;
         for (int r = sunR + 80; r >= sunR; r -= 6) {
@@ -2361,17 +2622,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
         int[] roadX = {195, 415, 660, -60};
         int[] roadY = {270, 270, 600, 600};
-        LinearGradientPaint roadGrad = new LinearGradientPaint(
-            new Point2D.Float(300, 270), new Point2D.Float(300, 600),
-            new float[]{0.0f, 0.45f, 1.0f},
-            new Color[]{
-                new Color(232, 175, 110),
-                new Color(205, 142, 82),
-                new Color(168, 105, 52)
-            }
-        );
-        bg.setPaint(roadGrad);
-        fillPolygonScanline(bg, new Polygon(roadX, roadY, 4));
+        float[] roadDist = {0.0f, 0.45f, 1.0f};
+        Color[] roadColors = {
+            new Color(232, 175, 110),
+            new Color(205, 142, 82),
+            new Color(168, 105, 52)
+        };
+        fillPolygonLinearGradient(bg, roadX, roadY, 4, 270, 600, roadColors, roadDist);
 
         int[] leftGrassX = {-20, 200, -20};
         int[] leftGrassY = {270, 270, 600};
@@ -2466,13 +2723,37 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         for (int sy = 215; sy < 305; sy += 16) {
             bresenhamLine(bg, 540, sy, 570, sy + 3, 0);
         }
+        // Kanji & Hiragana characters: 森 の 里 (Drawn stroke-by-stroke with Bresenham & Bezier)
         bg.setColor(new Color(45, 26, 12));
-        bg.setFont(new Font("Serif", Font.BOLD, 18));
-        bg.drawString("森", 547, 236);
-        bg.setFont(new Font("SansSerif", Font.BOLD, 15));
-        bg.drawString("の", 548, 264);
-        bg.setFont(new Font("Serif", Font.BOLD, 18));
-        bg.drawString("里", 547, 294);
+        int kx = 544;
+        // 1. 森 (Mori - 3 Trees)
+        bresenhamLine(bg, kx + 4, 218, kx + 18, 218, 1);
+        bresenhamLine(bg, kx + 11, 214, kx + 11, 226, 1);
+        bresenhamLine(bg, kx + 11, 218, kx + 4, 226, 1);
+        bresenhamLine(bg, kx + 11, 218, kx + 18, 226, 1);
+        bresenhamLine(bg, kx + 1, 233, kx + 10, 233, 1);
+        bresenhamLine(bg, kx + 5, 228, kx + 5, 240, 1);
+        bresenhamLine(bg, kx + 5, 233, kx + 1, 240, 1);
+        bresenhamLine(bg, kx + 5, 233, kx + 9, 240, 1);
+        bresenhamLine(bg, kx + 12, 233, kx + 21, 233, 1);
+        bresenhamLine(bg, kx + 17, 228, kx + 17, 240, 1);
+        bresenhamLine(bg, kx + 17, 233, kx + 12, 240, 1);
+        bresenhamLine(bg, kx + 17, 233, kx + 21, 240, 1);
+
+        // 2. の (No - Hiragana curve)
+        bezierCurve(bg, kx + 14, 252, kx + 4, 248, kx + 4, 262, kx + 14, 264, 12);
+        bezierCurve(bg, kx + 14, 264, kx + 20, 258, kx + 18, 248, kx + 8, 254, 12);
+
+        // 3. 里 (Sato - Village)
+        bresenhamLine(bg, kx + 4, 274, kx + 18, 274, 1);
+        bresenhamLine(bg, kx + 4, 284, kx + 18, 284, 1);
+        bresenhamLine(bg, kx + 4, 274, kx + 4, 284, 1);
+        bresenhamLine(bg, kx + 18, 274, kx + 18, 284, 1);
+        bresenhamLine(bg, kx + 11, 274, kx + 11, 284, 1);
+        bresenhamLine(bg, kx + 4, 279, kx + 18, 279, 1);
+        bresenhamLine(bg, kx + 6, 290, kx + 16, 290, 1);
+        bresenhamLine(bg, kx + 11, 284, kx + 11, 298, 1);
+        bresenhamLine(bg, kx + 2, 298, kx + 20, 298, 1);
 
         bg.setColor(new Color(55, 35, 20));
         int[] leftTrunkX = {-20, 30, 40, 5, -20};
@@ -2974,17 +3255,16 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             g2.setTransform(old);
         }
 
-        Point2D vigCenter = new Point2D.Float(300.0f, 300.0f);
-        float vigRadius = 430.0f;
-        float[] vigDist = {0.0f, 0.70f, 1.0f};
-        Color[] vigColors = {
-            new Color(0, 0, 0, 0),
-            new Color(40, 18, 5, 20),
-            new Color(25, 10, 2, 95)
-        };
-        RadialGradientPaint vig = new RadialGradientPaint(vigCenter, vigRadius, vigDist, vigColors);
-        g2.setPaint(vig);
-        fillRectangle(g2, 0, 0, 600, 600);
+        if (bicycleVignetteOverlay == null) {
+            float[] vigDist = {0.0f, 0.70f, 1.0f};
+            Color[] vigColors = {
+                new Color(0, 0, 0, 0),
+                new Color(40, 18, 5, 20),
+                new Color(25, 10, 2, 95)
+            };
+            bicycleVignetteOverlay = createRadialGradientImage(600, 600, 300, 300, 430f, vigColors, vigDist);
+        }
+        g2.drawImage(bicycleVignetteOverlay, 0, 0, null);
     }
 
     private void drawBicycleScene(Graphics2D g2, double st) {
@@ -3022,18 +3302,14 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         Graphics2D bg = img.createGraphics();
         bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        LinearGradientPaint sky = new LinearGradientPaint(
-            new Point2D.Float(300, 0), new Point2D.Float(300, 480),
-            new float[]{0.0f, 0.35f, 0.70f, 1.0f},
-            new Color[]{
-                new Color(52, 18, 68),
-                new Color(185, 45, 62),
-                new Color(238, 102, 35),
-                new Color(255, 195, 85)
-            }
-        );
-        bg.setPaint(sky);
-        fillRectangle(bg, 0, 0, 600, 480);
+        float[] skyDist = {0.0f, 0.35f, 0.70f, 1.0f};
+        Color[] skyColors = {
+            new Color(52, 18, 68),
+            new Color(185, 45, 62),
+            new Color(238, 102, 35),
+            new Color(255, 195, 85)
+        };
+        fillLinearGradientVertical(bg, 0, 0, 600, 480, skyColors, skyDist);
 
         int sunX = 300, sunY = 240, sunR = 45;
         for (int r = sunR + 70; r >= sunR; r -= 5) {
@@ -3055,13 +3331,9 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         bg.setColor(new Color(60, 18, 42, 230));
         fillPolygonScanline(bg, midHill);
 
-        LinearGradientPaint groundGrad = new LinearGradientPaint(
-            new Point2D.Float(0, 460), new Point2D.Float(0, 600),
-            new float[]{0f, 0.3f, 1f},
-            new Color[]{new Color(42, 14, 25), new Color(30, 10, 18), new Color(18, 6, 12)}
-        );
-        bg.setPaint(groundGrad);
-        fillRectangle(bg, 0, 460, 600, 140);
+        float[] groundDist = {0f, 0.3f, 1f};
+        Color[] groundColors = {new Color(42, 14, 25), new Color(30, 10, 18), new Color(18, 6, 12)};
+        fillLinearGradientVertical(bg, 0, 460, 600, 140, groundColors, groundDist);
 
         bg.dispose();
         return img;
@@ -3742,12 +4014,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
                 double bonkProg = (st - 3.0) / 0.6;
                 drawImpactBurst(g2, 350, groundY - 110, bonkProg);
 
-                g2.setFont(new Font("Impact", Font.BOLD, 26));
-                g2.setColor(new Color(20, 20, 20));
-                g2.drawString("BONK!", 333, groundY - 128);
-                g2.drawString("BONK!", 337, groundY - 128);
-                g2.setColor(new Color(255, 220, 50));
-                g2.drawString("BONK!", 335, groundY - 128);
+                drawVectorWordBONK(g2, 315, groundY - 142, new Color(20, 20, 20), new Color(255, 220, 50));
             }
 
         } else {
@@ -3778,30 +4045,22 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         bg.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
-        LinearGradientPaint wallGrad = new LinearGradientPaint(
-            new Point2D.Float(300, 0), new Point2D.Float(300, 390),
-            new float[]{0.0f, 0.40f, 0.80f, 1.0f},
-            new Color[]{
-                new Color(255, 248, 232),
-                new Color(250, 226, 185),
-                new Color(232, 182, 126),
-                new Color(180, 122, 72)
-            }
-        );
-        bg.setPaint(wallGrad);
-        fillRectangle(bg, 0, 0, 600, 390);
+        float[] wallDist = {0.0f, 0.40f, 0.80f, 1.0f};
+        Color[] wallColors = {
+            new Color(255, 248, 232),
+            new Color(250, 226, 185),
+            new Color(232, 182, 126),
+            new Color(180, 122, 72)
+        };
+        fillLinearGradientVertical(bg, 0, 0, 600, 390, wallColors, wallDist);
 
-        LinearGradientPaint floorGrad = new LinearGradientPaint(
-            new Point2D.Float(300, 385), new Point2D.Float(300, 600),
-            new float[]{0.0f, 0.4f, 1.0f},
-            new Color[]{
-                new Color(92, 50, 26),
-                new Color(66, 34, 16),
-                new Color(38, 18, 8)
-            }
-        );
-        bg.setPaint(floorGrad);
-        fillRectangle(bg, 0, 385, 600, 215);
+        float[] floorDist = {0.0f, 0.4f, 1.0f};
+        Color[] floorColors = {
+            new Color(92, 50, 26),
+            new Color(66, 34, 16),
+            new Color(38, 18, 8)
+        };
+        fillLinearGradientVertical(bg, 0, 385, 600, 215, floorColors, floorDist);
 
         bg.setColor(new Color(115, 65, 34));
         fillRectangle(bg, 0, 376, 600, 10);
@@ -3825,9 +4084,26 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         bg.setColor(new Color(255, 245, 120));
         fillRectangle(bg, frX + 22, frY + 68, 38, 38);
         bg.setColor(new Color(60, 45, 15));
-        bg.setFont(new Font("Tahoma", Font.BOLD, 8));
-        bg.drawString("GOOD", frX + 26, frY + 84);
-        bg.drawString("LUCK!", frX + 26, frY + 98);
+        // Vector letters G O O D / L U C K
+        // G
+        bezierCurve(bg, frX + 31, frY + 76, frX + 25, frY + 76, frX + 25, frY + 84, frX + 31, frY + 84, 8);
+        bresenhamLine(bg, frX + 31, frY + 80, frX + 28, frY + 80, 0);
+        // O O
+        midpointEllipse(bg, frX + 37, frY + 80, 3, 4);
+        midpointEllipse(bg, frX + 45, frY + 80, 3, 4);
+        // D
+        bresenhamLine(bg, frX + 51, frY + 76, frX + 51, frY + 84, 0);
+        bezierCurve(bg, frX + 51, frY + 76, frX + 57, frY + 76, frX + 57, frY + 84, frX + 51, frY + 84, 8);
+        // L U C K
+        bresenhamLine(bg, frX + 26, frY + 89, frX + 26, frY + 97, 0);
+        bresenhamLine(bg, frX + 26, frY + 97, frX + 31, frY + 97, 0);
+        bresenhamLine(bg, frX + 34, frY + 89, frX + 34, frY + 95, 0);
+        bezierCurve(bg, frX + 34, frY + 95, frX + 34, frY + 97, frX + 39, frY + 97, frX + 39, frY + 95, 8);
+        bresenhamLine(bg, frX + 39, frY + 89, frX + 39, frY + 95, 0);
+        bezierCurve(bg, frX + 47, frY + 89, frX + 42, frY + 89, frX + 42, frY + 97, frX + 47, frY + 97, 8);
+        bresenhamLine(bg, frX + 50, frY + 89, frX + 50, frY + 97, 0);
+        bresenhamLine(bg, frX + 56, frY + 89, frX + 50, frY + 93, 0);
+        bresenhamLine(bg, frX + 51, frY + 93, frX + 56, frY + 97, 0);
         fillMidpointCircle(bg, frX + 26, frY + 34, 6, new Color(230, 45, 45));
 
         bg.setColor(new Color(105, 58, 28));
@@ -3862,11 +4138,18 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
         fillMidpointCircle(bg, noteX + noteW / 2, noteY + 6, 3, new Color(225, 45, 45));
 
-        bg.setFont(new Font("Tahoma", Font.BOLD, 13));
+        // Cute vector note with decorative cursive strokes, warm heart, and smiling face
         bg.setColor(new Color(25, 75, 150));
-        bg.drawString("สวัสดีครับ", noteX + 16, noteY + 36);
-        bg.setColor(new Color(205, 35, 35));
-        bg.drawString("อาจารย์โม🙌♥", noteX + 10, noteY + 58);
+        bezierCurve(bg, noteX + 14, noteY + 28, noteX + 26, noteY + 22, noteX + 42, noteY + 32, noteX + 58, noteY + 26, 16);
+        bezierCurve(bg, noteX + 16, noteY + 40, noteX + 30, noteY + 36, noteX + 46, noteY + 44, noteX + 56, noteY + 38, 16);
+        // Cute vector heart
+        bg.setColor(new Color(225, 45, 65));
+        int hx = noteX + noteW / 2, hy = noteY + 56;
+        bezierCurve(bg, hx, hy + 10, hx - 14, hy + 2, hx - 10, hy - 8, hx, hy - 2, 12);
+        bezierCurve(bg, hx, hy + 10, hx + 14, hy + 2, hx + 10, hy - 8, hx, hy - 2, 12);
+        // Cute vector sparkle
+        bresenhamLine(bg, hx - 16, hy + 4, hx - 22, hy + 4, 1);
+        bresenhamLine(bg, hx + 16, hy + 4, hx + 22, hy + 4, 1);
 
         int shelfX = 460, shelfY = 0, shelfW = 140, shelfH = 345;
         bg.setColor(new Color(92, 50, 24));
@@ -3907,21 +4190,16 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillMidpointEllipse(bg, 300, 84, 32, 8, new Color(255, 235, 150));
         fillMidpointCircle(bg, 300, 84, 9, new Color(255, 255, 220));
 
-        LinearGradientPaint tableTop = new LinearGradientPaint(
-            new Point2D.Float(300, 360), new Point2D.Float(300, 595),
-            new float[]{0.0f, 0.35f, 0.75f, 1.0f},
-            new Color[]{
-                new Color(168, 98, 48),
-                new Color(138, 78, 38),
-                new Color(108, 55, 24),
-                new Color(72, 34, 14)
-            }
-        );
-        bg.setPaint(tableTop);
-        fillRoundedRectangle(bg, 10, 360, 580, 235, 75, 75);
+        float[] tableDist = {0.0f, 0.35f, 0.75f, 1.0f};
+        Color[] tableColors = {
+            new Color(168, 98, 48),
+            new Color(138, 78, 38),
+            new Color(108, 55, 24),
+            new Color(72, 34, 14)
+        };
+        fillRoundedRectangleLinearGradient(bg, 10, 360, 580, 235, 75, 75, tableColors, tableDist);
 
         bg.setColor(new Color(215, 140, 80));
-        bg.setStroke(new BasicStroke(3.0f));
         drawRoundedRectangle(bg, 10, 360, 580, 235, 75, 75);
 
         bg.setColor(new Color(40, 18, 6, 120));
@@ -4428,30 +4706,28 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     private void drawMooKrathaWarmLighting(Graphics2D g2, double st) {
-        Point2D lampCenter = new Point2D.Float(300.0f, 120.0f);
-        float lampRadius = 460.0f;
-        float[] lampDist = {0.0f, 0.45f, 0.85f, 1.0f};
-        Color[] lampColors = {
-            new Color(255, 235, 175, 75),
-            new Color(255, 215, 140, 45),
-            new Color(245, 185, 95, 18),
-            new Color(240, 160, 70, 0)
-        };
-        RadialGradientPaint lampGlow = new RadialGradientPaint(lampCenter, lampRadius, lampDist, lampColors);
-        g2.setPaint(lampGlow);
-        fillRectangle(g2, 0, 0, 600, 600);
+        if (mooKrathaLampOverlay == null) {
+            float[] lampDist = {0.0f, 0.45f, 0.85f, 1.0f};
+            Color[] lampColors = {
+                new Color(255, 235, 175, 75),
+                new Color(255, 215, 140, 45),
+                new Color(245, 185, 95, 18),
+                new Color(240, 160, 70, 0)
+            };
+            mooKrathaLampOverlay = createRadialGradientImage(600, 600, 300, 120, 460f, lampColors, lampDist);
+        }
+        g2.drawImage(mooKrathaLampOverlay, 0, 0, null);
 
-        Point2D vigCenter = new Point2D.Float(300.0f, 300.0f);
-        float vigRadius = 440.0f;
-        float[] vigDist = {0.0f, 0.70f, 1.0f};
-        Color[] vigColors = {
-            new Color(0, 0, 0, 0),
-            new Color(45, 18, 5, 25),
-            new Color(28, 10, 3, 110)
-        };
-        RadialGradientPaint vig = new RadialGradientPaint(vigCenter, vigRadius, vigDist, vigColors);
-        g2.setPaint(vig);
-        fillRectangle(g2, 0, 0, 600, 600);
+        if (mooKrathaVigOverlay == null) {
+            float[] vigDist = {0.0f, 0.70f, 1.0f};
+            Color[] vigColors = {
+                new Color(0, 0, 0, 0),
+                new Color(45, 18, 5, 25),
+                new Color(28, 10, 3, 110)
+            };
+            mooKrathaVigOverlay = createRadialGradientImage(600, 600, 300, 300, 440f, vigColors, vigDist);
+        }
+        g2.drawImage(mooKrathaVigOverlay, 0, 0, null);
     }
 
     private void drawMooKrathaScene(Graphics2D g2, double st) {
@@ -4483,12 +4759,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         Graphics2D g2 = img.createGraphics();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        GradientPaint wallPaint = new GradientPaint(
-            300, 0, new Color(252, 243, 226),
-            300, 390, new Color(230, 202, 168)
-        );
-        g2.setPaint(wallPaint);
-        fillRectangle(g2, 0, 0, 600, 390);
+        fillLinearGradientVertical(g2, 0, 0, 600, 390, new Color(252, 243, 226), new Color(230, 202, 168));
 
         fillMidpointEllipse(g2, 530, 150, 160, 220, new Color(255, 235, 185, 45));
 
@@ -4524,8 +4795,14 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         g2.setColor(new Color(55, 125, 65));
         fillRectangle(g2, 125, 65, 50, 34);
         g2.setColor(new Color(40, 65, 90));
-        g2.setFont(new Font("SansSerif", Font.BOLD, 6));
-        g2.drawString("ADVENTURE", 128, 38);
+        // Vector stylized mountain logo with Bresenham & Bezier
+        bresenhamLine(g2, 138, 40, 142, 33, 1);
+        bresenhamLine(g2, 142, 33, 146, 40, 1);
+        bresenhamLine(g2, 139, 37, 145, 37, 0);
+        bresenhamLine(g2, 149, 33, 149, 40, 1);
+        bezierCurve(g2, 149, 33, 156, 33, 156, 40, 149, 40, 8);
+        bresenhamLine(g2, 158, 33, 162, 40, 1);
+        bresenhamLine(g2, 162, 40, 166, 33, 1);
 
         g2.setColor(new Color(145, 95, 55));
         fillRectangle(g2, 470, 65, 80, 7);
@@ -4544,12 +4821,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillMidpointCircle(g2, 528, 42, 5, new Color(75, 175, 85));
         fillMidpointCircle(g2, 536, 43, 5, new Color(45, 125, 55));
 
-        GradientPaint floorPaint = new GradientPaint(
-            300, 385, new Color(145, 85, 45),
-            300, 600, new Color(85, 45, 20)
-        );
-        g2.setPaint(floorPaint);
-        fillRectangle(g2, 0, 385, 600, 215);
+        fillLinearGradientVertical(g2, 0, 385, 600, 215, new Color(145, 85, 45), new Color(85, 45, 20));
 
         g2.setColor(new Color(65, 32, 12, 100));
         for (int y = 415; y < 600; y += 32) {
@@ -4633,12 +4905,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         Shape oldClip = g2.getClip();
         g2.clipRect(scrX, scrY, scrW, scrH);
 
-        GradientPaint tvSky = new GradientPaint(
-            scrX, scrY, new Color(40, 120, 220),
-            scrX, scrY + scrH, new Color(135, 195, 255)
-        );
-        g2.setPaint(tvSky);
-        fillRectangle(g2, scrX, scrY, scrW, scrH);
+        fillLinearGradientVertical(g2, scrX, scrY, scrW, scrH, new Color(40, 120, 220), new Color(135, 195, 255));
 
         double cloudDrift = (st * 12.0) % (scrW + 40);
         g2.setColor(new Color(255, 255, 255, 160));
@@ -5062,47 +5329,55 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     private void drawTVLivingRoomLighting(Graphics2D g2, double st) {
+        if (tvGlowBlueOverlay == null) {
+            float[] tvDist = {0.0f, 0.45f, 0.85f, 1.0f};
+            Color[] blueColors = {
+                new Color(0, 175, 255, 255),
+                new Color(0, 175, 255, 128),
+                new Color(0, 175, 255, 42),
+                new Color(0, 175, 255, 0)
+            };
+            tvGlowBlueOverlay = createRadialGradientImage(600, 600, 100, 225, 420f, blueColors, tvDist);
+            Color[] orangeColors = {
+                new Color(255, 140, 30, 255),
+                new Color(255, 140, 30, 128),
+                new Color(255, 140, 30, 42),
+                new Color(255, 140, 30, 0)
+            };
+            tvGlowOrangeOverlay = createRadialGradientImage(600, 600, 100, 225, 420f, orangeColors, tvDist);
+        }
+
         float tvGlowPulse = (float) (0.6 + 0.4 * Math.sin(st * 12.0));
-        Color glowColor = ((int) (st * 6) % 2 == 0)
-            ? new Color(0, 175, 255, (int) (70 * tvGlowPulse))
-            : new Color(255, 140, 30, (int) (65 * tvGlowPulse));
+        boolean isBlue = ((int) (st * 6) % 2 == 0);
+        float baseAlpha = isBlue ? (70f / 255f) : (65f / 255f);
+        float compAlpha = Math.max(0f, Math.min(1f, baseAlpha * tvGlowPulse));
 
-        Point2D tvCenter = new Point2D.Float(100.0f, 225.0f);
-        float tvRadius = 420.0f;
-        float[] tvDist = {0.0f, 0.45f, 0.85f, 1.0f};
-        Color[] tvColors = {
-            glowColor,
-            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), glowColor.getAlpha() / 2),
-            new Color(glowColor.getRed(), glowColor.getGreen(), glowColor.getBlue(), glowColor.getAlpha() / 6),
-            new Color(0, 0, 0, 0)
-        };
-        RadialGradientPaint tvGlow = new RadialGradientPaint(tvCenter, tvRadius, tvDist, tvColors);
-        g2.setPaint(tvGlow);
-        fillRectangle(g2, 0, 0, 600, 600);
+        Composite oldComp = g2.getComposite();
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, compAlpha));
+        g2.drawImage(isBlue ? tvGlowBlueOverlay : tvGlowOrangeOverlay, 0, 0, null);
+        g2.setComposite(oldComp);
 
-        Point2D lampCenter = new Point2D.Float(575.0f, 120.0f);
-        float lampRadius = 380.0f;
-        float[] lampDist = {0.0f, 0.50f, 1.0f};
-        Color[] lampColors = {
-            new Color(255, 230, 160, 60),
-            new Color(245, 195, 110, 25),
-            new Color(230, 150, 60, 0)
-        };
-        RadialGradientPaint lampGlow = new RadialGradientPaint(lampCenter, lampRadius, lampDist, lampColors);
-        g2.setPaint(lampGlow);
-        fillRectangle(g2, 0, 0, 600, 600);
+        if (tvLampOverlay == null) {
+            float[] lampDist = {0.0f, 0.50f, 1.0f};
+            Color[] lampColors = {
+                new Color(255, 230, 160, 60),
+                new Color(245, 195, 110, 25),
+                new Color(230, 150, 60, 0)
+            };
+            tvLampOverlay = createRadialGradientImage(600, 600, 575, 120, 380f, lampColors, lampDist);
+        }
+        g2.drawImage(tvLampOverlay, 0, 0, null);
 
-        Point2D vigCenter = new Point2D.Float(300.0f, 300.0f);
-        float vigRadius = 440.0f;
-        float[] vigDist = {0.0f, 0.70f, 1.0f};
-        Color[] vigColors = {
-            new Color(0, 0, 0, 0),
-            new Color(35, 18, 10, 25),
-            new Color(20, 8, 4, 110)
-        };
-        RadialGradientPaint vig = new RadialGradientPaint(vigCenter, vigRadius, vigDist, vigColors);
-        g2.setPaint(vig);
-        fillRectangle(g2, 0, 0, 600, 600);
+        if (tvVigOverlay == null) {
+            float[] vigDist = {0.0f, 0.70f, 1.0f};
+            Color[] vigColors = {
+                new Color(0, 0, 0, 0),
+                new Color(35, 18, 10, 25),
+                new Color(20, 8, 4, 110)
+            };
+            tvVigOverlay = createRadialGradientImage(600, 600, 300, 300, 440f, vigColors, vigDist);
+        }
+        g2.drawImage(tvVigOverlay, 0, 0, null);
     }
 
     private void drawTVScene(Graphics2D g2, double st) {
