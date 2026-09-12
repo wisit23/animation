@@ -6,7 +6,7 @@ import java.util.Queue;
 import java.util.Random;
 import javax.swing.*;
 
-public class Assignment1_studentID_yourPairID extends JPanel implements Runnable {
+public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
     // animation timing
     // 0.0 -> 6.8    Scene 1: Night stargazing, zoom into eye, 1st-person POV sky & blink, eye close -> flashback
@@ -103,7 +103,7 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
         }
     }
 
-    public Assignment1_studentID_yourPairID() {
+    public Assignment1_67050522_67050637() {
         setPreferredSize(new Dimension(600, 600));
         setBackground(Color.BLACK);
     }
@@ -5203,7 +5203,7 @@ public class Assignment1_studentID_yourPairID extends JPanel implements Runnable
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            Assignment1_studentID_yourPairID panel = new Assignment1_studentID_yourPairID();
+            Assignment1_67050522_67050637 panel = new Assignment1_67050522_67050637();
             JFrame frame = new JFrame("Assignment 1 - MY MEMORIES");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setResizable(false);

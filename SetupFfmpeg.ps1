@@ -31,5 +31,5 @@ if (-not $ffmpegExecutable) {
 }
 
 Write-Host "FFmpeg is ready: $ffmpegExecutable"
-Write-Host "Run: javac Assignment1_studentID_yourPairID.java ExportAnimationToMp4.java"
+Write-Host "Run: javac -encoding UTF-8 Assignment1_67050522_67050637.java ExportAnimationToMp4.java"
 Write-Host "Then: java ExportAnimationToMp4"

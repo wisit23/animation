@@ -26,7 +26,7 @@ public final class ExportAnimationToMp4 {
                 .toAbsolutePath()
                 .normalize();
 
-        Assignment1_studentID_yourPairID animation = createAnimationPanel();
+        Assignment1_67050522_67050637 animation = createAnimationPanel();
         Process ffmpeg = startFfmpeg(output);
 
         try (OutputStream videoInput = ffmpeg.getOutputStream()) {
@@ -41,9 +41,9 @@ public final class ExportAnimationToMp4 {
         System.out.println("MP4 created: " + output);
     }
 
-    private static Assignment1_studentID_yourPairID createAnimationPanel() {
+    private static Assignment1_67050522_67050637 createAnimationPanel() {
         // Create an off-screen panel without starting the real-time loop.
-        Assignment1_studentID_yourPairID animation = new Assignment1_studentID_yourPairID();
+        Assignment1_67050522_67050637 animation = new Assignment1_67050522_67050637();
         animation.setSize(WIDTH, HEIGHT);
         animation.setDoubleBuffered(false);
         return animation;
@@ -74,8 +74,6 @@ public final class ExportAnimationToMp4 {
         command.add("18");
         command.add("-pix_fmt");
         command.add("yuv420p");
-        command.add("-movflags");
-        command.add("+faststart");
         command.add("-y");
         command.add(output.toString());
 
@@ -121,13 +119,13 @@ public final class ExportAnimationToMp4 {
     }
 
     private static void renderFrames(
-            Assignment1_studentID_yourPairID animation,
+            Assignment1_67050522_67050637 animation,
             OutputStream videoInput
     ) throws IOException {
         // Render each time step into one BGR video frame.
         BufferedImage frame = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_3BYTE_BGR);
         byte[] pixels = ((DataBufferByte) frame.getRaster().getDataBuffer()).getData();
-        int frameCount = (int) Math.ceil(Assignment1_studentID_yourPairID.CYCLE * FPS);
+        int frameCount = (int) Math.ceil(Assignment1_67050522_67050637.CYCLE * FPS);
 
         for (int frameNumber = 0; frameNumber < frameCount; frameNumber++) {
             animation.totalTime = (double) frameNumber / FPS;
