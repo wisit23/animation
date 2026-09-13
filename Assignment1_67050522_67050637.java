@@ -1,15 +1,23 @@
-import java.awt.*;
-import java.awt.geom.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
+    private static final long serialVersionUID = 1L;
 
-    // animation timing
+    // Animation timeline in seconds.
     // 0.0 -> 6.8    Scene 1: Night stargazing, zoom into eye, 1st-person POV sky & blink, eye close -> flashback
     // 6.8 -> 11.8   Scene 2 (Memory 1): Football match & bicycle kick
     // 11.8 -> 17.8  Scene 3 (Memory 2): Epic childhood toy sword fight
@@ -43,18 +51,18 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     static final double WARP_RAMP = 0.45;
     static final int FRAME_MS = 16;
 
-    private BufferedImage bicycleBackdrop = null;
-    private BufferedImage livingRoomBackdrop = null;
-    private BufferedImage vignetteOverlay = null;
-    private BufferedImage streamVignetteOverlay = null;
-    private BufferedImage bicycleVignetteOverlay = null;
-    private BufferedImage mooKrathaLampOverlay = null;
-    private BufferedImage mooKrathaVigOverlay = null;
-    private BufferedImage tvLampOverlay = null;
-    private BufferedImage tvVigOverlay = null;
-    private BufferedImage tvGlowBlueOverlay = null;
-    private BufferedImage tvGlowOrangeOverlay = null;
-    private BufferedImage tvSceneBuffer = null;
+    private BufferedImage bicycleBackdrop;
+    private BufferedImage livingRoomBackdrop;
+    private BufferedImage vignetteOverlay;
+    private BufferedImage streamVignetteOverlay;
+    private BufferedImage bicycleVignetteOverlay;
+    private BufferedImage mooKrathaLampOverlay;
+    private BufferedImage mooKrathaVigOverlay;
+    private BufferedImage tvLampOverlay;
+    private BufferedImage tvVigOverlay;
+    private BufferedImage tvGlowBlueOverlay;
+    private BufferedImage tvGlowOrangeOverlay;
+    private BufferedImage tvSceneBuffer;
 
     private static final int NUM_STARS = 260;
     private static final double[] starX = new double[NUM_STARS];
@@ -114,6 +122,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         }
     }
 
+    @SuppressWarnings("this-escape") // Standard Swing component setup in its constructor.
     public Assignment1_67050522_67050637() {
         setPreferredSize(new Dimension(600, 600));
         setBackground(Color.BLACK);
@@ -930,7 +939,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         return new Point2D.Double(worldEyeX, worldEyeY);
     }
 
-    // 2. SCENE 1: NIGHT STARGAZING (3RD PERSON + FIRST-PERSON POV & BLINK)
+    // SCENE 1: NIGHT STARGAZING (3RD PERSON + FIRST-PERSON POV & BLINK)
 
     private void drawNightScene(Graphics2D g2d, double t) {
         boolean isPOV = (t >= POV_START && t < WARP_INTO_MEMORY) || (t >= WARP_BACK && t < POV_EXIT);
@@ -1573,6 +1582,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         }
     }
 
+    // SCENE 2 (MEMORY 1): FOOTBALL MATCH AND BICYCLE KICK
     private BufferedImage memoryBackdrop;
 
     private BufferedImage buildMemoryBackdrop() {
@@ -1766,36 +1776,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
                 cx, cy, 1.0, angle, INK);
         fillTransformedEllipse(g2, hdX, hdY + 7, 4, 3,
                 cx, cy, 1.0, angle, INK);
-    }
-
-    private void drawDiver(Graphics2D g2, int cx, int cy, double rotDeg, double reach) {
-        AffineTransform keep = g2.getTransform();
-        AffineTransform tx = new AffineTransform(keep);
-        tx.rotate(Math.toRadians(rotDeg), cx, cy);
-        g2.setTransform(tx);
-
-        int t2 = 2;
-        int headR = 16;
-        g2.setColor(INK);
-        bresenhamLine(g2, cx + 20, cy, cx - 40, cy + 6, t2);
-        int r = (int) (reach * 20);
-        bresenhamLine(g2, cx + 14, cy + 2, cx + 52 + r, cy - 20 - r, t2);
-        bresenhamLine(g2, cx + 14, cy + 6, cx + 48 + r, cy + 14, t2);
-        bresenhamLine(g2, cx - 40, cy + 6, cx - 70, cy - 12, t2);
-        bresenhamLine(g2, cx - 70, cy - 12, cx - 96, cy + 4, t2);
-        fillEllipse(g2, cx - 106, cy, 18, 9);
-        bresenhamLine(g2, cx - 40, cy + 6, cx - 68, cy + 26, t2);
-        bresenhamLine(g2, cx - 68, cy + 26, cx - 94, cy + 22, t2);
-        fillEllipse(g2, cx - 104, cy + 18, 18, 9);
-
-        g2.setColor(Color.WHITE);
-        fillEllipse(g2, cx + 20 - headR, cy - headR, headR * 2, headR * 2);
-        g2.setColor(INK);
-        midpointCircle(g2, cx + 20, cy, headR);
-        fillEllipse(g2, cx + 18, cy - 6, 4, 4);
-        fillEllipse(g2, cx + 27, cy - 6, 4, 4);
-
-        g2.setTransform(keep);
     }
 
     private void drawSiuCelebrate(Graphics2D g2, int startX, int groundY, double ct) {
@@ -2117,7 +2097,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         }
     }
 
-    // 7. MEMORY SCENE 3: CHILDHOOD FRIENDS PLAYING IN A FOREST STREAM
+    // SCENE 4 (MEMORY 3): CHILDHOOD FRIENDS PLAYING IN A FOREST STREAM
 
     private BufferedImage streamBackdrop;
 
@@ -2949,12 +2929,11 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     private void drawFrontBicycleBase(Graphics2D g2, double cx, double cy, double scale, double wheelAngle,
-                                      Color frameColor, double pedalAngle, double tiltAngle) {
+                                      Color frameColor, double pedalAngle) {
         AffineTransform old = g2.getTransform();
         g2.translate(cx, cy);
         g2.scale(scale, scale);
-        // Keep scanline-filled bicycle parts upright. Rotating their one-pixel
-        // rows creates visible seams when rendering hints are disabled.
+        // Keep scanline-filled bicycle parts upright to avoid seams between rows.
 
         int wheelW = 11;
         int wheelH = 36;
@@ -3013,8 +2992,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     private void drawFrontBicycleCockpit(Graphics2D g2, double cx, double cy, double scale,
-                                        Color frameColor, boolean hasFrontBasket, Color basketBagColor,
-                                        double tiltAngle) {
+                                        Color frameColor, boolean hasFrontBasket, Color basketBagColor) {
         AffineTransform old = g2.getTransform();
         g2.translate(cx, cy);
         g2.scale(scale, scale);
@@ -3074,7 +3052,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         double scale = 1.05;
         double pedalAngle = st * 5.5;
         double bob = Math.sin(st * 11.0) * 2.2;
-        double tilt = Math.sin(pedalAngle) * 0.04;
         int t2 = 2;
 
         int bbY = (int) (y - 24 * scale);
@@ -3119,7 +3096,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
         bezierCurve(g2, headX - 4, headY + 3, headX + 1, headY + 8, headX + 5, headY + 8, headX + 8, headY + 3);
 
-        drawFrontBicycleBase(g2, x, y, scale, st * 9.0, new Color(30, 95, 205), pedalAngle, tilt);
+        drawFrontBicycleBase(g2, x, y, scale, st * 9.0, new Color(30, 95, 205), pedalAngle);
 
         int gripX1 = (int) (x - 34 * scale);
         int gripX2 = (int) (x + 34 * scale);
@@ -3130,14 +3107,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillMidpointCircle(g2, gripX1, gripY, (int)(3 * scale), INK);
         fillMidpointCircle(g2, gripX2, gripY, (int)(3 * scale), INK);
 
-        drawFrontBicycleCockpit(g2, x, y, scale, new Color(30, 95, 205), false, null, tilt);
+        drawFrontBicycleCockpit(g2, x, y, scale, new Color(30, 95, 205), false, null);
     }
 
     private void drawBikerFriend2_BlueJacket(Graphics2D g2, double x, double y, double st) {
         double scale = 0.72;
         double pedalAngle = st * 4.8;
         double bob = Math.sin(st * 9.6) * 1.5;
-        double tilt = Math.sin(pedalAngle) * 0.035;
         int t2 = 2;
 
         int bbY = (int) (y - 24 * scale);
@@ -3176,7 +3152,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillEllipse(g2, headX + 2, headY - 3, (int)(3 * scale), (int)(4 * scale));
         bezierCurve(g2, headX - 3, headY + 3, headX, headY + 6, headX + 2, headY + 6, headX + 4, headY + 3);
 
-        drawFrontBicycleBase(g2, x, y, scale, st * 8.5, new Color(42, 142, 58), pedalAngle, tilt);
+        drawFrontBicycleBase(g2, x, y, scale, st * 8.5, new Color(42, 142, 58), pedalAngle);
 
         int gripX1 = (int) (x - 34 * scale);
         int gripX2 = (int) (x + 34 * scale);
@@ -3187,14 +3163,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillMidpointCircle(g2, gripX1, gripY, (int)(2 * scale), INK);
         fillMidpointCircle(g2, gripX2, gripY, (int)(2 * scale), INK);
 
-        drawFrontBicycleCockpit(g2, x, y, scale, new Color(42, 142, 58), true, null, tilt);
+        drawFrontBicycleCockpit(g2, x, y, scale, new Color(42, 142, 58), true, null);
     }
 
-    private void drawBikerFriend3_CenterHero23(Graphics2D g2, double x, double y, double st) {
+    private void drawBikerFriend3_CenterHero(Graphics2D g2, double x, double y, double st) {
         double scale = 1.10;
         double pedalAngle = st * 5.8;
         double bob = Math.sin(st * 11.6) * 2.4;
-        double tilt = Math.sin(pedalAngle) * 0.04;
         int t2 = 2;
 
         int bbY = (int) (y - 24 * scale);
@@ -3241,7 +3216,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
         bezierCurve(g2, headX - 5, headY + 3, headX, headY + 8, headX + 4, headY + 8, headX + 7, headY + 3);
 
-        drawFrontBicycleBase(g2, x, y, scale, st * 9.4, new Color(28, 80, 62), pedalAngle, tilt);
+        drawFrontBicycleBase(g2, x, y, scale, st * 9.4, new Color(28, 80, 62), pedalAngle);
 
         int gripX1 = (int) (x - 34 * scale);
         int gripX2 = (int) (x + 34 * scale);
@@ -3252,14 +3227,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillMidpointCircle(g2, gripX1, gripY, (int)(3 * scale), INK);
         fillMidpointCircle(g2, gripX2, gripY, (int)(3 * scale), INK);
 
-        drawFrontBicycleCockpit(g2, x, y, scale, new Color(28, 80, 62), true, new Color(65, 125, 55), tilt);
+        drawFrontBicycleCockpit(g2, x, y, scale, new Color(28, 80, 62), true, new Color(65, 125, 55));
     }
 
     private void drawBikerFriend4_GreenHoodie(Graphics2D g2, double x, double y, double st) {
         double scale = 0.92;
         double pedalAngle = st * 5.4 + 0.8;
         double bob = Math.sin(st * 10.8 + 0.8) * 1.9;
-        double tilt = Math.sin(pedalAngle) * 0.038;
         int t2 = 2;
 
         int bbY = (int) (y - 24 * scale);
@@ -3298,7 +3272,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillEllipse(g2, headX + 1, headY - 4, (int)(4 * scale), (int)(5 * scale));
         bezierCurve(g2, headX - 5, headY + 3, headX - 2, headY + 7, headX + 2, headY + 7, headX + 4, headY + 4);
 
-        drawFrontBicycleBase(g2, x, y, scale, st * 9.0, new Color(36, 92, 180), pedalAngle, tilt);
+        drawFrontBicycleBase(g2, x, y, scale, st * 9.0, new Color(36, 92, 180), pedalAngle);
 
         int gripX1 = (int) (x - 34 * scale);
         int gripX2 = (int) (x + 34 * scale);
@@ -3309,7 +3283,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillMidpointCircle(g2, gripX1, gripY, (int)(3 * scale), INK);
         fillMidpointCircle(g2, gripX2, gripY, (int)(3 * scale), INK);
 
-        drawFrontBicycleCockpit(g2, x, y, scale, new Color(36, 92, 180), true, null, tilt);
+        drawFrontBicycleCockpit(g2, x, y, scale, new Color(36, 92, 180), true, null);
     }
 
     private void drawBicycleRoadMotion(Graphics2D g2, double st) {
@@ -3417,12 +3391,12 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         drawBikerFriend2_BlueJacket(g2, x2, y2, st);
         drawBikerFriend4_GreenHoodie(g2, x4, y4, st);
         drawBikerFriend1_RedHoodie(g2, x1, y1, st);
-        drawBikerFriend3_CenterHero23(g2, x3, y3, st);
+        drawBikerFriend3_CenterHero(g2, x3, y3, st);
 
         drawBicycleAtmosphere(g2, st);
     }
 
-    // 8. MEMORY SCENE 2: EPIC CHILDHOOD TOY SWORD FIGHT (ANIME BATTLE)
+    // SCENE 3 (MEMORY 2): EPIC CHILDHOOD TOY SWORD FIGHT
 
     private BufferedImage swordBackdrop;
 
@@ -4157,7 +4131,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         }
     }
 
-    // SCENE 6 (MEMORY 5): COZY MOO KRATHA (THAI BBQ) DINNER AT HOME WITH FAMILY
+    // SCENE 7 (MEMORY 6): COZY MOO KRATHA DINNER AT HOME WITH FAMILY
 
     private BufferedImage mooKrathaBackdrop;
 
@@ -4505,11 +4479,11 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             int startY = (int) (potY - 12 - cycle * 20);
 
             int cp1X = (int) (startX + wave1);
-            int cp1Y = (int) (startY - 45);
+            int cp1Y = startY - 45;
             int cp2X = (int) (startX + wave2);
-            int cp2Y = (int) (startY - 100);
+            int cp2Y = startY - 100;
             int endX = (int) (startX + wave1 * 1.4);
-            int endY = (int) (startY - 165);
+            int endY = startY - 165;
 
             int alpha = (int) (120 * Math.sin(cycle * Math.PI));
             if (alpha > 5) {
@@ -4802,7 +4776,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         g2.setColor(INK);
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
 
-        int toastHandX = (int) (shoulderX - 32);
+        int toastHandX = shoulderX - 32;
         int toastHandY = (int) (shoulderY - 14 + toast);
         bresenhamLine(g2, shoulderX - 6, shoulderY + 2, toastHandX, toastHandY, t2);
         fillMidpointCircle(g2, toastHandX, toastHandY, 3, INK);
@@ -4874,7 +4848,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         drawMooKrathaWarmLighting(g2, st);
     }
 
-    // SCENE 5 (MEMORY 4): WATCHING TV AT HOME WITH FRIENDS (ULTRAMAN VS GODZILLA)
+    // SCENE 6 (MEMORY 5): WATCHING TV AT HOME WITH FRIENDS (ULTRAMAN VS GODZILLA)
 
     private BufferedImage buildLivingRoomBackdrop() {
         BufferedImage img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
