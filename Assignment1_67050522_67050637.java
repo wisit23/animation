@@ -4934,15 +4934,20 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int scrW = tvW - 16;
         int scrH = tvH - 30;
 
-        Shape oldClip = g2.getClip();
-        g2.clipRect(scrX, scrY, scrW, scrH);
-
         fillLinearGradientVertical(g2, scrX, scrY, scrW, scrH, new Color(40, 120, 220), new Color(135, 195, 255));
 
-        double cloudDrift = (st * 12.0) % (scrW + 40);
+        // Keep the complete cloud inside the screen, then use painter order
+        // to draw the television frame over the screen content at the end.
+        int cloudLeft = scrX + 12;
+        int cloudRight = scrX + scrW - 18;
+        double cloudRange = Math.max(0, cloudRight - cloudLeft);
+        double cloudTravel = cloudRange > 0 ? (st * 12.0) % (cloudRange * 2.0) : 0;
+        int cloudX = cloudTravel <= cloudRange
+                ? cloudLeft + (int) cloudTravel
+                : cloudRight - (int) (cloudTravel - cloudRange);
         g2.setColor(new Color(255, 255, 255, 160));
-        fillMidpointEllipse(g2, (int) (scrX + scrW - cloudDrift), scrY + 22, 20, 9, new Color(255, 255, 255, 160));
-        fillMidpointEllipse(g2, (int) (scrX + scrW - cloudDrift + 14), scrY + 24, 14, 7, new Color(255, 255, 255, 160));
+        fillMidpointEllipse(g2, cloudX, scrY + 22, 12, 6, new Color(255, 255, 255, 160));
+        fillMidpointEllipse(g2, cloudX + 10, scrY + 24, 8, 5, new Color(255, 255, 255, 160));
 
         int groundY = scrY + scrH - 18;
         g2.setColor(new Color(52, 65, 88));
@@ -5072,7 +5077,11 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int[] glareY = {scrY, scrY, scrY + scrH, scrY + scrH};
         fillPolygonScanline(g2, glareX, glareY, 4);
 
-        g2.setClip(oldClip);
+        // Painter's algorithm: the foreground frame is drawn last so its
+        // outline remains above every object rendered inside the screen.
+        g2.setColor(new Color(55, 58, 66));
+        drawRoundedRectangle(g2, tvX, tvY, tvW, tvH - 10, 10, 10);
+        drawRectangle(g2, scrX - 1, scrY - 1, scrW + 1, scrH + 1);
 
         fillMidpointCircle(g2, tvX + tvW - 14, tvY + tvH - 18, 2, new Color(45, 220, 255));
     }
