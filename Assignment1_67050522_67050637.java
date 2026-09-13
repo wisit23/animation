@@ -206,8 +206,10 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         if (radius < 0) return;
         g.setColor(color);
 
+        // Run the Midpoint Circle algorithm first and remember the widest
+        // symmetric boundary found for each horizontal row.
         int[] halfWidths = new int[radius + 1];
-        for (int i = 0; i <= radius; i++) halfWidths[i] = -1;
+        for (int row = 0; row <= radius; row++) halfWidths[row] = -1;
 
         int x = 0;
         int y = radius;
@@ -215,6 +217,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         while (x <= y) {
             halfWidths[y] = Math.max(halfWidths[y], x);
             halfWidths[x] = Math.max(halfWidths[x], y);
+
             x++;
             if (decision < 0) {
                 decision += 2 * x + 1;
@@ -224,11 +227,14 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             }
         }
 
+        // Fill every row once so translucent colors are not blended repeatedly.
         for (int row = 0; row <= radius; row++) {
             int halfWidth = halfWidths[row];
             if (halfWidth < 0) continue;
             paintSpan(g, cx - halfWidth, cy + row, halfWidth * 2 + 1);
-            if (row != 0) paintSpan(g, cx - halfWidth, cy - row, halfWidth * 2 + 1);
+            if (row != 0) {
+                paintSpan(g, cx - halfWidth, cy - row, halfWidth * 2 + 1);
+            }
         }
     }
 
@@ -244,6 +250,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     public static void fillMidpointEllipse(Graphics g, int cx, int cy, int radiusX, int radiusY, Color color) {
         if (radiusX < 0 || radiusY < 0) return;
         g.setColor(color);
+
         if (radiusY == 0) {
             paintSpan(g, cx - radiusX, cy, radiusX * 2 + 1);
             return;
@@ -253,8 +260,10 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             return;
         }
 
+        // Store the horizontal radius discovered for each row. This lets the
+        // Midpoint boundary drive the fill without painting alpha pixels twice.
         int[] halfWidths = new int[radiusY + 1];
-        for (int i = 0; i <= radiusY; i++) halfWidths[i] = -1;
+        for (int row = 0; row <= radiusY; row++) halfWidths[row] = -1;
 
         long rx2 = (long) radiusX * radiusX;
         long ry2 = (long) radiusY * radiusY;
@@ -264,6 +273,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         long dy = 2 * rx2 * y;
         double decision = ry2 - rx2 * radiusY + 0.25 * rx2;
 
+        // Region 1: the ellipse slope has magnitude below one.
         while (dx < dy) {
             halfWidths[(int) y] = Math.max(halfWidths[(int) y], (int) x);
             x++;
@@ -277,7 +287,9 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             }
         }
 
-        decision = ry2 * Math.pow(x + 0.5, 2) + rx2 * Math.pow(y - 1, 2) - rx2 * ry2;
+        // Region 2: continue until the boundary reaches the horizontal axis.
+        decision = ry2 * Math.pow(x + 0.5, 2)
+                + rx2 * Math.pow(y - 1, 2) - rx2 * ry2;
         while (y >= 0) {
             halfWidths[(int) y] = Math.max(halfWidths[(int) y], (int) x);
             y--;
@@ -295,7 +307,9 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             int halfWidth = halfWidths[row];
             if (halfWidth < 0) continue;
             paintSpan(g, cx - halfWidth, cy + row, halfWidth * 2 + 1);
-            if (row != 0) paintSpan(g, cx - halfWidth, cy - row, halfWidth * 2 + 1);
+            if (row != 0) {
+                paintSpan(g, cx - halfWidth, cy - row, halfWidth * 2 + 1);
+            }
         }
     }
 
