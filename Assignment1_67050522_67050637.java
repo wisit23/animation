@@ -997,10 +997,11 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     public void drawMilkyWay(Graphics2D g2d, double time) {
-        AffineTransform oldTx = g2d.getTransform();
-
-        g2d.translate(338, 265);
-        g2d.rotate(Math.toRadians(-46.15));
+        int centerX = 338;
+        int centerY = 265;
+        double angle = Math.toRadians(-46.15);
+        double cosAngle = Math.cos(angle);
+        double sinAngle = Math.sin(angle);
 
         int[] bandWidths = {220, 150, 90, 45};
         Color[] bandColors = {
@@ -1019,6 +1020,15 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             appendBezierPoints(band, 600, -w / 2.0,
                     100, w * 0.3, -200, w * 0.7, -600, w / 2.0, 40);
 
+            // Rotate every vertex before scanline filling. Rotating completed
+            // one-pixel spans would leave diagonal gaps without antialiasing.
+            for (Point point : band) {
+                int localX = point.x;
+                int localY = point.y;
+                point.x = centerX + (int) Math.round(localX * cosAngle - localY * sinAngle);
+                point.y = centerY + (int) Math.round(localX * sinAngle + localY * cosAngle);
+            }
+
             g2d.setColor(bandColors[i]);
             fillPointPolygon(g2d, band);
         }
@@ -1027,15 +1037,16 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         for (int i = 0; i < 110; i++) {
             int gx = gRand.nextInt(1000) - 500;
             int gy = (int) (gRand.nextGaussian() * 30);
+            int screenX = centerX + (int) Math.round(gx * cosAngle - gy * sinAngle);
+            int screenY = centerY + (int) Math.round(gx * sinAngle + gy * cosAngle);
             int gr = 1 + gRand.nextInt(2);
             int alpha = 40 + gRand.nextInt(150);
             Color dustColor = (gRand.nextInt(3) == 0) ?
                     new Color(230, 200, 255, alpha) :
                     new Color(200, 230, 255, alpha);
-            fillMidpointEllipse(g2d, gx, gy, gr, gr + (gRand.nextBoolean() ? 1 : 0), dustColor);
+            fillMidpointEllipse(g2d, screenX, screenY, gr,
+                    gr + (gRand.nextBoolean() ? 1 : 0), dustColor);
         }
-
-        g2d.setTransform(oldTx);
     }
 
     public void drawMoon(Graphics2D g2d, double time) {
@@ -1269,12 +1280,11 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         AffineTransform tilt = new AffineTransform(noTilt);
         tilt.rotate(Math.toRadians(-60), headX, headY);
 
-        g2.setTransform(tilt);
-        g2.setColor(Color.WHITE);
-        fillEllipse(g2, headX - headR, headY - headR, headR * 2, headR * 2);
+        // A circle is unchanged by rotation, so rasterize the head before
+        // applying the face tilt. Rotating its one-pixel spans creates gaps.
+        fillMidpointCircle(g2, headX, headY, headR, Color.WHITE);
         g2.setColor(new Color(20, 20, 20));
         midpointCircle(g2, headX, headY, headR);
-        g2.setTransform(noTilt);
 
         g2.setTransform(tilt);
 
@@ -1465,7 +1475,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     private BufferedImage buildMemoryBackdrop() {
         BufferedImage img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_RGB);
         Graphics2D bg = img.createGraphics();
-        bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         fillLinearGradientVertical(bg, 0, 0, 600, 400, new Color(250, 200, 120), new Color(255, 236, 190));
 
@@ -2024,8 +2033,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     private BufferedImage buildStreamBackdrop() {
         BufferedImage img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_RGB);
         Graphics2D bg = img.createGraphics();
-        bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        bg.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
         float[] skyDist = {0.0f, 0.45f, 0.85f, 1.0f};
         Color[] skyColors = {
@@ -2619,8 +2626,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     private BufferedImage buildBicycleBackdrop() {
         BufferedImage img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_RGB);
         Graphics2D bg = img.createGraphics();
-        bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        bg.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
         float[] skyDist = {0.0f, 0.35f, 0.70f, 1.0f};
         Color[] skyColors = {
@@ -3336,7 +3341,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     private BufferedImage buildSwordBackdrop() {
         BufferedImage img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_RGB);
         Graphics2D bg = img.createGraphics();
-        bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         float[] skyDist = {0.0f, 0.35f, 0.70f, 1.0f};
         Color[] skyColors = {
@@ -4074,8 +4078,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     private BufferedImage buildMooKrathaBackdrop() {
         BufferedImage img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_RGB);
         Graphics2D bg = img.createGraphics();
-        bg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        bg.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
         float[] wallDist = {0.0f, 0.40f, 0.80f, 1.0f};
         Color[] wallColors = {
@@ -4789,7 +4791,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     private BufferedImage buildLivingRoomBackdrop() {
         BufferedImage img = new BufferedImage(600, 600, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = img.createGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         fillLinearGradientVertical(g2, 0, 0, 600, 390, new Color(252, 243, 226), new Color(230, 202, 168));
 
@@ -5487,11 +5488,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g.create();
-
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
         double t = totalTime;
 
