@@ -5274,9 +5274,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int headX = shoulderX + 8, headY = (int) (shoulderY - 28 + chew * 0.3);
 
         g2.setColor(INK);
-        bresenhamLine(g2, hipX, hipY, hipX - 22, hipY + 16, t2);
-        bresenhamLine(g2, hipX - 22, hipY + 16, hipX + 12, hipY + 28, t2);
-        fillEllipse(g2, hipX + 8, hipY + 24, 14, 7);
+        // Draw both bent legs so neither side disappears behind the foreground table.
+        bresenhamLine(g2, hipX - 6, hipY, hipX - 22, hipY + 16, t2);
+        bresenhamLine(g2, hipX - 22, hipY + 16, hipX - 34, hipY + 28, t2);
+        fillEllipse(g2, hipX - 40, hipY + 24, 14, 7);
+        bresenhamLine(g2, hipX + 6, hipY, hipX + 22, hipY + 16, t2);
+        bresenhamLine(g2, hipX + 22, hipY + 16, hipX + 34, hipY + 28, t2);
+        fillEllipse(g2, hipX + 28, hipY + 24, 14, 7);
 
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
 
@@ -5378,9 +5382,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int headX = shoulderX - 10, headY = y - 30;
 
         g2.setColor(INK);
-        bresenhamLine(g2, hipX, hipY, hipX - 18, hipY + 16, t2);
-        bresenhamLine(g2, hipX - 18, hipY + 16, hipX + 14, hipY + 28, t2);
-        fillEllipse(g2, hipX + 10, hipY + 24, 14, 7);
+        // Draw a complete pair of seated legs around the orange pillow.
+        bresenhamLine(g2, hipX - 6, hipY, hipX - 20, hipY + 16, t2);
+        bresenhamLine(g2, hipX - 20, hipY + 16, hipX - 32, hipY + 28, t2);
+        fillEllipse(g2, hipX - 38, hipY + 24, 14, 7);
+        bresenhamLine(g2, hipX + 6, hipY, hipX + 20, hipY + 16, t2);
+        bresenhamLine(g2, hipX + 20, hipY + 16, hipX + 32, hipY + 28, t2);
+        fillEllipse(g2, hipX + 26, hipY + 24, 14, 7);
 
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
 
@@ -5422,7 +5430,10 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int headX = shoulderX - 6, headY = (int) (shoulderY - 28 - cheerHop * 0.5);
 
         g2.setColor(INK);
-        bresenhamLine(g2, hipX, hipY, hipX + 16, hipY + 18, t2);
+        // Both legs remain visible while the character cheers on the sofa.
+        bresenhamLine(g2, hipX - 5, hipY, hipX - 18, hipY + 18, t2);
+        fillEllipse(g2, hipX - 24, hipY + 15, 14, 7);
+        bresenhamLine(g2, hipX + 5, hipY, hipX + 18, hipY + 18, t2);
         fillEllipse(g2, hipX + 12, hipY + 15, 14, 7);
 
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
