@@ -488,6 +488,17 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillPointPolygon(g, boundary);
     }
 
+    private static void drawTransformedBezier(Graphics g,
+            double x1, double y1, double x2, double y2,
+            double x3, double y3, double x4, double y4,
+            double originX, double originY, double scale, double angle) {
+        Point p1 = transformPoint(x1, y1, originX, originY, scale, angle);
+        Point p2 = transformPoint(x2, y2, originX, originY, scale, angle);
+        Point p3 = transformPoint(x3, y3, originX, originY, scale, angle);
+        Point p4 = transformPoint(x4, y4, originX, originY, scale, angle);
+        bezierCurve(g, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+    }
+
     private static void appendBezierPoints(java.util.List<Point> points,
             double x1, double y1, double x2, double y2,
             double x3, double y3, double x4, double y4, int steps) {
@@ -1380,7 +1391,52 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int eyeY = headY - 8;
         int eyeLX = headX - 14, eyeRX = headX + 6;
         int h = 8;
+        boolean isScene8 = (t >= POV_WAKE_START && t <= CYCLE);
 
+        if (!isScene8) {
+            // Preserve the original tired face, but rotate its geometry before
+            // rasterizing. This prevents scanline gaps while the camera zooms.
+            g2.setTransform(noTilt);
+            double faceAngle = Math.toRadians(-60);
+
+            fillTransformedEllipse(g2, eyeLX, eyeY + 6, 7, 2,
+                    headX, headY, 1.0, faceAngle, new Color(42, 48, 62, 45));
+            fillTransformedEllipse(g2, eyeRX, eyeY + 6, 7, 2,
+                    headX, headY, 1.0, faceAngle, new Color(42, 48, 62, 45));
+
+            // Keep the half-lidded eye shape, but omit the four decorative
+            // crease strokes that turn into scratch-like lines during zoom.
+            fillTransformedEllipse(g2, eyeLX, eyeY, 4, 3,
+                    headX, headY, 1.0, faceAngle, INK);
+            fillTransformedEllipse(g2, eyeRX, eyeY, 4, 3,
+                    headX, headY, 1.0, faceAngle, INK);
+            g2.setColor(INK);
+            drawTransformedBezier(g2, eyeLX - 5, eyeY - 2, eyeLX, eyeY - 1,
+                    eyeLX + 3, eyeY - 1, eyeLX + 5, eyeY - 2,
+                    headX, headY, 1.0, faceAngle);
+            drawTransformedBezier(g2, eyeRX - 5, eyeY - 2, eyeRX, eyeY - 1,
+                    eyeRX + 3, eyeY - 1, eyeRX + 5, eyeY - 2,
+                    headX, headY, 1.0, faceAngle);
+
+            Point leftHighlight = transformPoint(eyeLX - 1, eyeY - 1, headX, headY, 1.0, faceAngle);
+            Point rightHighlight = transformPoint(eyeRX - 1, eyeY - 1, headX, headY, 1.0, faceAngle);
+            fillMidpointCircle(g2, leftHighlight.x, leftHighlight.y, 1, new Color(255, 255, 255, 160));
+            fillMidpointCircle(g2, rightHighlight.x, rightHighlight.y, 1, new Color(255, 255, 255, 160));
+
+            g2.setColor(INK);
+            drawTransformedBezier(g2, eyeLX - 8, eyeY - 12, eyeLX - 4, eyeY - 15,
+                    eyeLX + 3, eyeY - 15, eyeLX + 7, eyeY - 13,
+                    headX, headY, 1.0, faceAngle);
+            drawTransformedBezier(g2, eyeRX - 7, eyeY - 13, eyeRX - 3, eyeY - 15,
+                    eyeRX + 4, eyeY - 15, eyeRX + 8, eyeY - 12,
+                    headX, headY, 1.0, faceAngle);
+            drawTransformedBezier(g2, headX - 12, headY + 13, headX - 6, headY + 21,
+                    headX + 6, headY + 21, headX + 12, headY + 13,
+                    headX, headY, 1.0, faceAngle);
+            return;
+        }
+
+        // Scene 8 keeps the detailed tearful expression.
         fillMidpointEllipse(g2, eyeLX, eyeY + 6, 7, 2, new Color(42, 48, 62, 45));
         fillMidpointEllipse(g2, eyeRX, eyeY + 6, 7, 2, new Color(42, 48, 62, 45));
 
@@ -1392,67 +1448,37 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         bezierCurve(g2, eyeLX - 5, eyeY - 6, eyeLX - 1, eyeY - 8, eyeLX + 2, eyeY - 8, eyeLX + 5, eyeY - 6);
         bezierCurve(g2, eyeRX - 5, eyeY - 6, eyeRX, eyeY - 8, eyeRX + 3, eyeY - 8, eyeRX + 6, eyeY - 6);
 
-        boolean isScene8 = (t >= POV_WAKE_START && t <= CYCLE);
-        if (isScene8) {
-            double cryIntensity = Math.min(1.0, (t - POV_WAKE_START) / 0.8);
-            int flushAlpha = (int) (45 * cryIntensity);
-            fillMidpointEllipse(g2, eyeLX, eyeY + 3, 7, 4, new Color(230, 95, 105, flushAlpha));
-            fillMidpointEllipse(g2, eyeRX, eyeY + 3, 7, 4, new Color(230, 95, 105, flushAlpha));
-            fillMidpointEllipse(g2, headX + 1, headY + 3, 4, 3, new Color(230, 95, 105, (int) (40 * cryIntensity)));
-            fillMidpointEllipse(g2, headX - 14, headY + 7, 6, 3, new Color(230, 95, 105, (int) (30 * cryIntensity)));
-            fillMidpointEllipse(g2, headX + 14, headY + 7, 6, 3, new Color(230, 95, 105, (int) (30 * cryIntensity)));
-        }
+        double cryIntensity = Math.min(1.0, (t - POV_WAKE_START) / 0.8);
+        int flushAlpha = (int) (45 * cryIntensity);
+        fillMidpointEllipse(g2, eyeLX, eyeY + 3, 7, 4, new Color(230, 95, 105, flushAlpha));
+        fillMidpointEllipse(g2, eyeRX, eyeY + 3, 7, 4, new Color(230, 95, 105, flushAlpha));
+        fillMidpointEllipse(g2, headX + 1, headY + 3, 4, 3, new Color(230, 95, 105, (int) (40 * cryIntensity)));
+        fillMidpointEllipse(g2, headX - 14, headY + 7, 6, 3, new Color(230, 95, 105, (int) (30 * cryIntensity)));
+        fillMidpointEllipse(g2, headX + 14, headY + 7, 6, 3, new Color(230, 95, 105, (int) (30 * cryIntensity)));
 
-        g2.setColor(new Color(20, 20, 20));
-        if (!isScene8) {
-    // Scene 1: Tired, heavy, half-lidded eyes (อ่อนล้า อ่อนเพลีย)
-            fillEllipse(g2, eyeLX - 4, eyeY - h / 2 + 1, 8, h - 1);
-            fillEllipse(g2, eyeRX - 4, eyeY - h / 2 + 1, 8, h - 1);
-            g2.setColor(new Color(20, 20, 20));
-            bezierCurve(g2, eyeLX - 5, eyeY - 2, eyeLX, eyeY - 1, eyeLX + 3, eyeY - 1, eyeLX + 5, eyeY - 2);
-            bezierCurve(g2, eyeRX - 5, eyeY - 2, eyeRX, eyeY - 1, eyeRX + 3, eyeY - 1, eyeRX + 5, eyeY - 2);
-            fillMidpointCircle(g2, eyeLX - 1, eyeY - 1, 1, new Color(255, 255, 255, 160));
-            fillMidpointCircle(g2, eyeRX - 1, eyeY - 1, 1, new Color(255, 255, 255, 160));
-        } else {
-    // Scene 8: Watery eyes filled with pooled tears (ตาฉ่ำวาวไปด้วยน้ำตา)
-            fillEllipse(g2, eyeLX - 4, eyeY - h / 2, 8, h);
-            fillEllipse(g2, eyeRX - 4, eyeY - h / 2, 8, h);
+        g2.setColor(INK);
+        fillEllipse(g2, eyeLX - 4, eyeY - h / 2, 8, h);
+        fillEllipse(g2, eyeRX - 4, eyeY - h / 2, 8, h);
+        fillMidpointEllipse(g2, eyeLX, eyeY + 2, 3, 2, new Color(195, 230, 255, 220));
+        fillMidpointEllipse(g2, eyeRX, eyeY + 2, 3, 2, new Color(195, 230, 255, 220));
+        fillMidpointCircle(g2, eyeLX - 1, eyeY - 2, 1, Color.WHITE);
+        fillMidpointCircle(g2, eyeLX + 1, eyeY + 2, 1, new Color(255, 255, 255, 240));
+        fillMidpointCircle(g2, eyeRX - 1, eyeY - 2, 1, Color.WHITE);
+        fillMidpointCircle(g2, eyeRX + 1, eyeY + 2, 1, new Color(255, 255, 255, 240));
 
-            fillMidpointEllipse(g2, eyeLX, eyeY + 2, 3, 2, new Color(195, 230, 255, 220));
-            fillMidpointEllipse(g2, eyeRX, eyeY + 2, 3, 2, new Color(195, 230, 255, 220));
-            fillMidpointCircle(g2, eyeLX - 1, eyeY - 2, 1, Color.WHITE);
-            fillMidpointCircle(g2, eyeLX + 1, eyeY + 2, 1, new Color(255, 255, 255, 240));
-            fillMidpointCircle(g2, eyeRX - 1, eyeY - 2, 1, Color.WHITE);
-            fillMidpointCircle(g2, eyeRX + 1, eyeY + 2, 1, new Color(255, 255, 255, 240));
-        }
+        g2.setColor(INK);
+        bezierCurve(g2, eyeLX - 8, eyeY - 11, eyeLX - 4, eyeY - 14, eyeLX + 2, eyeY - 18, eyeLX + 7, eyeY - 16);
+        bezierCurve(g2, eyeRX - 7, eyeY - 16, eyeRX - 2, eyeY - 18, eyeRX + 4, eyeY - 14, eyeRX + 8, eyeY - 11);
 
-        g2.setColor(new Color(20, 20, 20));
-        if (!isScene8) {
-    // Scene 1: Tired, flat/exhausted eyebrows
-            bezierCurve(g2, eyeLX - 8, eyeY - 12, eyeLX - 4, eyeY - 15, eyeLX + 3, eyeY - 15, eyeLX + 7, eyeY - 13);
-            bezierCurve(g2, eyeRX - 7, eyeY - 13, eyeRX - 3, eyeY - 15, eyeRX + 4, eyeY - 15, eyeRX + 8, eyeY - 12);
-        } else {
-    // Scene 8: Troubled, nostalgic, deeply moved eyebrows (คิ้วขมวดตกอย่างเศร้าสร้อยและซาบซึ้ง)
-            bezierCurve(g2, eyeLX - 8, eyeY - 11, eyeLX - 4, eyeY - 14, eyeLX + 2, eyeY - 18, eyeLX + 7, eyeY - 16);
-            bezierCurve(g2, eyeRX - 7, eyeY - 16, eyeRX - 2, eyeY - 18, eyeRX + 4, eyeY - 14, eyeRX + 8, eyeY - 11);
-        }
+        double tremble = (t >= 41.3 && t <= 43.5) ? Math.sin(t * 26.0) * (0.8 + 0.3 * Math.sin(t * 7.0)) : 0.0;
+        int mx1 = headX - 14, my1 = (int) (headY + 14 + tremble * 0.5);
+        int mc1x = headX - 7, mc1y = (int) (headY + 24 + tremble);
+        int mc2x = headX + 7, mc2y = (int) (headY + 24 - tremble);
+        int mx2 = headX + 14, my2 = (int) (headY + 14 - tremble * 0.5);
+        bezierCurve(g2, mx1, my1, mc1x, mc1y, mc2x, mc2y, mx2, my2);
 
-    // Scene 1: Gentle tired faint sigh/smile of an exhausted adult
-    // Scene 8: Trembling, poignant bittersweet mouth holding back a sob (ริมฝีปากสั่นเครือด้วยความสะเทือนใจ)
-        g2.setColor(new Color(20, 20, 20));
-        if (!isScene8) {
-            bezierCurve(g2, headX - 12, headY + 13, headX - 6, headY + 21, headX + 6, headY + 21, headX + 12, headY + 13);
-        } else {
-            double tremble = (t >= 41.3 && t <= 43.5) ? Math.sin(t * 26.0) * (0.8 + 0.3 * Math.sin(t * 7.0)) : 0.0;
-            int mx1 = headX - 14, my1 = (int) (headY + 14 + tremble * 0.5);
-            int mc1x = headX - 7, mc1y = (int) (headY + 24 + tremble);
-            int mc2x = headX + 7, mc2y = (int) (headY + 24 - tremble);
-            int mx2 = headX + 14, my2 = (int) (headY + 14 - tremble * 0.5);
-            bezierCurve(g2, mx1, my1, mc1x, mc1y, mc2x, mc2y, mx2, my2);
-
-            g2.setColor(new Color(40, 30, 45, 100));
-            bezierCurve(g2, headX - 5, (int)(headY + 26 + tremble), headX, (int)(headY + 28 + tremble), headX + 2, (int)(headY + 28 + tremble), headX + 5, (int)(headY + 26 + tremble));
-        }
+        g2.setColor(new Color(40, 30, 45, 100));
+        bezierCurve(g2, headX - 5, (int)(headY + 26 + tremble), headX, (int)(headY + 28 + tremble), headX + 2, (int)(headY + 28 + tremble), headX + 5, (int)(headY + 26 + tremble));
 
         if (t >= TEAR_START && t <= CYCLE) {
             drawEmotionalTears(g2, headX, headY, eyeLX, eyeRX, eyeY, t);
@@ -4658,7 +4684,8 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         bresenhamLine(g2, headX + 7, headY - headR, headX + 11, headY - headR - 7, 1);
 
         int ex = headX + 2;
-        bezierCurve(g2, ex - 10, headY - 5, ex - 5, headY - 2, ex - 5, headY - 2, ex - 10, headY + 1);
+        // Use two solid eyes; the old wink curve looked like stray scratch lines.
+        fillEllipse(g2, ex - 10, headY - 4, 4, 5);
         fillEllipse(g2, ex + 2, headY - 4, 4, 5);
         bezierCurve(g2, headX - 7, headY + 4, headX, headY + 10, headX + 5, headY + 10, headX + 8, headY + 4);
     }
