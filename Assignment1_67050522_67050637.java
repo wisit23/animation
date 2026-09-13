@@ -443,6 +443,51 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         return new Point((int) Math.round(x), (int) Math.round(y));
     }
 
+    // Transform the geometry first, then rasterize it in screen coordinates.
+    // This avoids the one-pixel gaps produced when Graphics2D rotates scanline spans.
+    private static Point transformPoint(double x, double y, double originX, double originY,
+                                        double scale, double angle) {
+        double localX = (x - originX) * scale;
+        double localY = (y - originY) * scale;
+        double cos = Math.cos(angle);
+        double sin = Math.sin(angle);
+        return roundedPoint(originX + localX * cos - localY * sin,
+                            originY + localX * sin + localY * cos);
+    }
+
+    private static void drawTransformedRasterLine(Graphics g,
+            double x1, double y1, double x2, double y2,
+            double originX, double originY, double scale, double angle, int thickness) {
+        Point from = transformPoint(x1, y1, originX, originY, scale, angle);
+        Point to = transformPoint(x2, y2, originX, originY, scale, angle);
+        int transformedThickness = Math.max(0, (int) Math.round(thickness * scale));
+        bresenhamLine(g, from.x, from.y, to.x, to.y, transformedThickness);
+    }
+
+    private static void fillTransformedEllipse(Graphics g, double centerX, double centerY,
+            double radiusX, double radiusY, double originX, double originY,
+            double scale, double angle, Color color) {
+        int steps = Math.max(24, (int) Math.ceil(Math.max(radiusX, radiusY) * scale * 4));
+        java.util.List<Point> boundary = new java.util.ArrayList<>();
+        double cos = Math.cos(angle);
+        double sin = Math.sin(angle);
+        Point transformedCenter = transformPoint(centerX, centerY, originX, originY, scale, angle);
+        double scaledRadiusX = Math.max(1.0, radiusX * scale);
+        double scaledRadiusY = Math.max(1.0, radiusY * scale);
+
+        for (int i = 0; i < steps; i++) {
+            double theta = i * Math.PI * 2.0 / steps;
+            double ellipseX = Math.cos(theta) * scaledRadiusX;
+            double ellipseY = Math.sin(theta) * scaledRadiusY;
+            boundary.add(roundedPoint(
+                    transformedCenter.x + ellipseX * cos - ellipseY * sin,
+                    transformedCenter.y + ellipseX * sin + ellipseY * cos));
+        }
+
+        g.setColor(color);
+        fillPointPolygon(g, boundary);
+    }
+
     private static void appendBezierPoints(java.util.List<Point> points,
             double x1, double y1, double x2, double y2,
             double x3, double y3, double x4, double y4, int steps) {
@@ -1218,25 +1263,23 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     private void drawChamomileFlower(Graphics2D g2d, double x, double y, double scale, double rotation) {
-        AffineTransform oldTx = g2d.getTransform();
-        g2d.translate(x, y);
-        g2d.rotate(rotation);
-        g2d.scale(scale, scale);
-
         g2d.setColor(new Color(60, 110, 45));
-        bresenhamLine(g2d, 0, 0, (int) (rotation * 8), 28, 1);
+        drawTransformedRasterLine(g2d, x, y, x + rotation * 8, y + 28,
+                x, y, scale, rotation, 1);
 
         for (int p = 0; p < 12; p++) {
-            double ang = p * (Math.PI * 2 / 12);
-            int px = (int) (Math.cos(ang) * 9);
-            int py = (int) (Math.sin(ang) * 9);
-            fillMidpointEllipse(g2d, px, py, 4, 3, new Color(245, 245, 250, 230));
+            double petalAngle = p * (Math.PI * 2 / 12);
+            double petalX = x + Math.cos(petalAngle) * 9;
+            double petalY = y + Math.sin(petalAngle) * 9;
+            fillTransformedEllipse(g2d, petalX, petalY, 4, 3,
+                    x, y, scale, rotation, new Color(245, 245, 250, 230));
         }
 
-        fillMidpointCircle(g2d, 0, 0, 4, new Color(255, 215, 80, 240));
-        fillMidpointCircle(g2d, 0, 0, 2, new Color(255, 240, 150, 255));
-
-        g2d.setTransform(oldTx);
+        Point center = transformPoint(x, y, x, y, scale, rotation);
+        fillMidpointCircle(g2d, center.x, center.y, Math.max(1, (int) Math.round(4 * scale)),
+                new Color(255, 215, 80, 240));
+        fillMidpointCircle(g2d, center.x, center.y, Math.max(1, (int) Math.round(2 * scale)),
+                new Color(255, 240, 150, 255));
     }
 
     public void drawVignette(Graphics2D g2d) {
@@ -1584,25 +1627,20 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         g2.setColor(new Color(25, 25, 25));
         midpointCircle(g2, cx, cy, r);
 
-        AffineTransform keep = g2.getTransform();
-        AffineTransform spun = new AffineTransform(keep);
-        spun.rotate(spin, cx, cy);
-        g2.setTransform(spun);
         int[] px = new int[5];
         int[] py = new int[5];
         for (int i = 0; i < 5; i++) {
-            double a = Math.toRadians(-90 + i * 72);
+            double a = Math.toRadians(-90 + i * 72) + spin;
             px[i] = cx + (int) (r * 0.40 * Math.cos(a));
             py[i] = cy + (int) (r * 0.40 * Math.sin(a));
         }
         fillPolygonScanline(g2, px, py, 5);
         for (int i = 0; i < 5; i++) {
-            double a = Math.toRadians(-90 + i * 72);
+            double a = Math.toRadians(-90 + i * 72) + spin;
             int ox = cx + (int) (r * 0.95 * Math.cos(a));
             int oy = cy + (int) (r * 0.95 * Math.sin(a));
             bresenhamLine(g2, px[i], py[i], ox, oy, 1);
         }
-        g2.setTransform(keep);
     }
 
     private static final Color INK = new Color(25, 25, 25);
@@ -1656,13 +1694,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     static final int FOOT_DX = 50, FOOT_DY = -58;
 
     private void drawBicycleKicker(Graphics2D g2, int cx, int cy, double windup, double tiltDeg) {
-        AffineTransform keep = g2.getTransform();
-        if (tiltDeg != 0) {
-            AffineTransform tx = new AffineTransform(keep);
-            tx.rotate(Math.toRadians(tiltDeg), cx, cy);
-            g2.setTransform(tx);
-        }
-
+        double angle = Math.toRadians(tiltDeg);
         int t2 = 2;
         int headR = 18;
         double w = Math.max(0, Math.min(1, windup));
@@ -1673,39 +1705,41 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int hdY = cy + (int) (30 * w) - (int) (56 * (1 - w));
 
         g2.setColor(INK);
-        bresenhamLine(g2, shX, shY, cx, cy, t2);
-
-        bresenhamLine(g2, shX, shY, shX - 26, shY - 26, t2);
-        bresenhamLine(g2, shX, shY, shX - 16, shY + 40, t2);
+        drawTransformedRasterLine(g2, shX, shY, cx, cy, cx, cy, 1.0, angle, t2);
+        drawTransformedRasterLine(g2, shX, shY, shX - 26, shY - 26, cx, cy, 1.0, angle, t2);
+        drawTransformedRasterLine(g2, shX, shY, shX - 16, shY + 40, cx, cy, 1.0, angle, t2);
 
         int kneeX = cx + (int) (22 * w);
         int kneeY = cy - (int) (26 * w) + (int) (28 * (1 - w));
         int footX = cx + (int) (FOOT_DX * w);
         int footY = cy + (int) (FOOT_DY * w) + (int) (56 * (1 - w));
-        bresenhamLine(g2, cx, cy, kneeX, kneeY, t2);
-        bresenhamLine(g2, kneeX, kneeY, footX, footY, t2);
-        fillEllipse(g2, footX - 8, footY - 5, 18, 9);
+        drawTransformedRasterLine(g2, cx, cy, kneeX, kneeY, cx, cy, 1.0, angle, t2);
+        drawTransformedRasterLine(g2, kneeX, kneeY, footX, footY, cx, cy, 1.0, angle, t2);
+        fillTransformedEllipse(g2, footX + 1, footY - 1, 9, 4,
+                cx, cy, 1.0, angle, INK);
 
         int k2x = cx + (int) (10 * w);
         int k2y = cy + 30;
         int f2x = cx + (int) (42 * w);
         int f2y = cy + 46;
-        bresenhamLine(g2, cx, cy, k2x, k2y, t2);
-        bresenhamLine(g2, k2x, k2y, f2x, f2y, t2);
-        fillEllipse(g2, f2x - 8, f2y - 4, 18, 9);
+        drawTransformedRasterLine(g2, cx, cy, k2x, k2y, cx, cy, 1.0, angle, t2);
+        drawTransformedRasterLine(g2, k2x, k2y, f2x, f2y, cx, cy, 1.0, angle, t2);
+        fillTransformedEllipse(g2, f2x + 1, f2y, 9, 4,
+                cx, cy, 1.0, angle, INK);
 
-        bresenhamLine(g2, hdX, hdY, shX, shY, t2);
+        drawTransformedRasterLine(g2, hdX, hdY, shX, shY, cx, cy, 1.0, angle, t2);
 
-        g2.setColor(Color.WHITE);
-        fillEllipse(g2, hdX - headR, hdY - headR, headR * 2, headR * 2);
+        Point head = transformPoint(hdX, hdY, cx, cy, 1.0, angle);
+        fillMidpointCircle(g2, head.x, head.y, headR, Color.WHITE);
         g2.setColor(INK);
-        midpointCircle(g2, hdX, hdY, headR);
+        midpointCircle(g2, head.x, head.y, headR);
 
-        fillEllipse(g2, hdX - 8, hdY - 5, 4, 4);
-        fillEllipse(g2, hdX + 4, hdY - 5, 4, 4);
-        fillEllipse(g2, hdX - 4, hdY + 4, 8, 6);
-
-        g2.setTransform(keep);
+        fillTransformedEllipse(g2, hdX - 6, hdY - 3, 2, 2,
+                cx, cy, 1.0, angle, INK);
+        fillTransformedEllipse(g2, hdX + 6, hdY - 3, 2, 2,
+                cx, cy, 1.0, angle, INK);
+        fillTransformedEllipse(g2, hdX, hdY + 7, 4, 3,
+                cx, cy, 1.0, angle, INK);
     }
 
     private void drawDiver(Graphics2D g2, int cx, int cy, double rotDeg, double reach) {
@@ -1891,37 +1925,34 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     private void drawFlungPlayer(Graphics2D g2, int cx, int cy, double spinDeg) {
-        AffineTransform keep = g2.getTransform();
-        AffineTransform tx = new AffineTransform(keep);
-        tx.rotate(Math.toRadians(spinDeg), cx, cy);
-        g2.setTransform(tx);
-
+        double angle = Math.toRadians(spinDeg);
         int t2 = 2;
         int headR = 16;
         g2.setColor(INK);
 
-        bresenhamLine(g2, cx, cy - 4, cx, cy + 32, t2);
-        bresenhamLine(g2, cx, cy + 2, cx - 36, cy - 22, t2);
-        bresenhamLine(g2, cx, cy + 2, cx + 34, cy - 16, t2);
-        bresenhamLine(g2, cx, cy + 32, cx - 26, cy + 56, t2);
-        bresenhamLine(g2, cx, cy + 32, cx + 28, cy + 54, t2);
-        fillEllipse(g2, cx - 36, cy + 52, 18, 9);
-        fillEllipse(g2, cx + 24, cy + 50, 18, 9);
+        drawTransformedRasterLine(g2, cx, cy - 4, cx, cy + 32, cx, cy, 1.0, angle, t2);
+        drawTransformedRasterLine(g2, cx, cy + 2, cx - 36, cy - 22, cx, cy, 1.0, angle, t2);
+        drawTransformedRasterLine(g2, cx, cy + 2, cx + 34, cy - 16, cx, cy, 1.0, angle, t2);
+        drawTransformedRasterLine(g2, cx, cy + 32, cx - 26, cy + 56, cx, cy, 1.0, angle, t2);
+        drawTransformedRasterLine(g2, cx, cy + 32, cx + 28, cy + 54, cx, cy, 1.0, angle, t2);
+        fillTransformedEllipse(g2, cx - 27, cy + 56, 9, 4,
+                cx, cy, 1.0, angle, INK);
+        fillTransformedEllipse(g2, cx + 33, cy + 54, 9, 4,
+                cx, cy, 1.0, angle, INK);
 
-        bresenhamLine(g2, cx, cy - 4, cx, cy - 24, t2);
-        g2.setColor(Color.WHITE);
-        fillEllipse(g2, cx - headR, cy - 26 - headR, headR * 2, headR * 2);
+        drawTransformedRasterLine(g2, cx, cy - 4, cx, cy - 24, cx, cy, 1.0, angle, t2);
+        Point head = transformPoint(cx, cy - 26, cx, cy, 1.0, angle);
+        fillMidpointCircle(g2, head.x, head.y, headR, Color.WHITE);
         g2.setColor(INK);
-        midpointCircle(g2, cx, cy - 26, headR);
+        midpointCircle(g2, head.x, head.y, headR);
 
         int ey = cy - 31;
-        bresenhamLine(g2, cx - 11, ey - 4, cx - 4, ey + 3, 1);
-        bresenhamLine(g2, cx - 4, ey - 4, cx - 11, ey + 3, 1);
-        bresenhamLine(g2, cx + 4, ey - 4, cx + 11, ey + 3, 1);
-        bresenhamLine(g2, cx + 11, ey - 4, cx + 4, ey + 3, 1);
-        fillEllipse(g2, cx - 5, cy - 21, 10, 8);
-
-        g2.setTransform(keep);
+        drawTransformedRasterLine(g2, cx - 11, ey - 4, cx - 4, ey + 3, cx, cy, 1.0, angle, 1);
+        drawTransformedRasterLine(g2, cx - 4, ey - 4, cx - 11, ey + 3, cx, cy, 1.0, angle, 1);
+        drawTransformedRasterLine(g2, cx + 4, ey - 4, cx + 11, ey + 3, cx, cy, 1.0, angle, 1);
+        drawTransformedRasterLine(g2, cx + 11, ey - 4, cx + 4, ey + 3, cx, cy, 1.0, angle, 1);
+        fillTransformedEllipse(g2, cx, cy - 17, 5, 4,
+                cx, cy, 1.0, angle, INK);
     }
 
     private void drawSpeedLines(Graphics2D g2, int cx, int cy, double strength, int count, int seed) {
@@ -2896,7 +2927,8 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         AffineTransform old = g2.getTransform();
         g2.translate(cx, cy);
         g2.scale(scale, scale);
-        g2.rotate(tiltAngle, 0, 0);
+        // Keep scanline-filled bicycle parts upright. Rotating their one-pixel
+        // rows creates visible seams when rendering hints are disabled.
 
         int wheelW = 11;
         int wheelH = 36;
@@ -2960,7 +2992,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         AffineTransform old = g2.getTransform();
         g2.translate(cx, cy);
         g2.scale(scale, scale);
-        g2.rotate(tiltAngle, 0, 0);
+        // The rider still bobs and pedals; only the unsafe raster rotation is omitted.
 
         int wheelH = 36;
         int forkTopY = -wheelH * 2 + 8;
@@ -3322,12 +3354,8 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             double ly = 60 + leafRand.nextDouble() * 460 + Math.sin(st * 3.0 + i) * 22;
             double rot = st * 4.0 + i;
 
-            AffineTransform old = g2.getTransform();
-            g2.translate(lx, ly);
-            g2.rotate(rot);
             Color leafColor = (i % 2 == 0) ? new Color(115, 175, 52, 210) : new Color(225, 160, 48, 200);
-            fillMidpointEllipse(g2, 0, 0, 5, 2, leafColor);
-            g2.setTransform(old);
+            fillTransformedEllipse(g2, lx, ly, 5, 2, lx, ly, 1.0, rot, leafColor);
         }
 
         if (bicycleVignetteOverlay == null) {
@@ -3568,7 +3596,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int ex = x + dir * 5;
         fillEllipse(g2, ex - dir * 5 - 2, headY - 5, 4, 4);
         fillEllipse(g2, ex + dir * 3 - 2, headY - 5, 4, 4);
-        bezierCurve(g2, ex - dir * 7, headY - 9, ex - dir * 3, headY - 13, ex + dir * 1, headY - 13, ex + dir * 5, headY - 9);
         bezierCurve(g2, ex - 4, headY + 5, ex, headY + 7, ex + 3, headY + 7, ex + 5, headY + 5);
     }
 
@@ -3628,7 +3655,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int ex = headX + dir * 4;
         fillEllipse(g2, ex - dir * 5 - 2, headY - 5, 4, 5);
         fillEllipse(g2, ex + dir * 3 - 2, headY - 5, 4, 5);
-        bezierCurve(g2, ex - dir * 7, headY - 9, ex - dir * 3, headY - 13, ex + dir * 1, headY - 13, ex + dir * 5, headY - 9);
         bezierCurve(g2, ex - dir * 5, headY + 5, ex - dir * 1, headY + 8, ex + dir * 3, headY + 8, ex + dir * 6, headY + 5);
     }
 
@@ -4596,29 +4622,30 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int headY = shoulderY - 26;
 
         g2.setColor(INK);
-        bresenhamLine(g2, hipX, hipY, hipX - 14, hipY + 36, t2);
-        bresenhamLine(g2, hipX - 14, hipY + 36, hipX - 14, hipY + 70, t2);
-        fillEllipse(g2, hipX - 20, hipY + 66, 14, 7);
-
+        // The table hides the seated lower body. Drawing the old long leg over
+        // the tabletop made it look like an arm reaching down to the drink.
         bresenhamLine(g2, shoulderX, shoulderY, hipX, hipY, t2);
 
         int handLX = x + 10, handLY = tableY + 8;
         bresenhamLine(g2, shoulderX - 8, shoulderY + 4, handLX, handLY, t2);
         fillMidpointCircle(g2, handLX, handLY, 3, INK);
 
-        int handRX = (int) (x + 72 + reach);
+        // Keep the grilling arm bent near the body instead of looking stretched.
+        int handRX = (int) (x + 58 + reach * 0.5);
         int handRY = (int) (tableY - 14 + Math.sin(st * 3.5) * 4);
-        int elbowRX = (shoulderX + handRX) / 2 + 4;
-        int elbowRY = shoulderY + 14;
+        int elbowRX = shoulderX + (handRX - shoulderX) / 2;
+        int elbowRY = shoulderY + 16;
         bresenhamLine(g2, shoulderX + 6, shoulderY + 2, elbowRX, elbowRY, t2);
         bresenhamLine(g2, elbowRX, elbowRY, handRX, handRY, t2);
         fillMidpointCircle(g2, handRX, handRY, 3, INK);
 
-        g2.setColor(new Color(175, 115, 60));
-        int chopTipX = handRX + 36;
-        int chopTipY = handRY + 16;
-        bresenhamLine(g2, handRX - 10, handRY - 8, chopTipX, chopTipY, 1);
-        bresenhamLine(g2, handRX - 8, handRY - 11, chopTipX - 2, chopTipY + 4, 1);
+        // Start both chopsticks at the hand and keep them parallel. Starting
+        // behind the wrist made the brown sticks merge with the arm visually.
+        g2.setColor(new Color(155, 95, 42));
+        int chopTipX = handRX + 25;
+        int chopTipY = handRY + 11;
+        bresenhamLine(g2, handRX, handRY - 1, chopTipX, chopTipY, 0);
+        bresenhamLine(g2, handRX + 2, handRY - 3, chopTipX + 2, chopTipY - 2, 0);
 
         bresenhamLine(g2, headX, headY + headR, shoulderX, shoulderY, t2);
         g2.setColor(Color.WHITE);
