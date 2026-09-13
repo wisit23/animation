@@ -203,8 +203,33 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     public static void fillMidpointCircle(Graphics g, int cx, int cy, int radius, Color color) {
+        if (radius < 0) return;
         g.setColor(color);
-        fillEllipseRaster(g, cx, cy, radius, radius);
+
+        int[] halfWidths = new int[radius + 1];
+        for (int i = 0; i <= radius; i++) halfWidths[i] = -1;
+
+        int x = 0;
+        int y = radius;
+        int decision = 1 - radius;
+        while (x <= y) {
+            halfWidths[y] = Math.max(halfWidths[y], x);
+            halfWidths[x] = Math.max(halfWidths[x], y);
+            x++;
+            if (decision < 0) {
+                decision += 2 * x + 1;
+            } else {
+                y--;
+                decision += 2 * (x - y) + 1;
+            }
+        }
+
+        for (int row = 0; row <= radius; row++) {
+            int halfWidth = halfWidths[row];
+            if (halfWidth < 0) continue;
+            paintSpan(g, cx - halfWidth, cy + row, halfWidth * 2 + 1);
+            if (row != 0) paintSpan(g, cx - halfWidth, cy - row, halfWidth * 2 + 1);
+        }
     }
 
     private static void fillEllipseRaster(Graphics g, int cx, int cy, int radiusX, int radiusY) {
@@ -217,8 +242,61 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     public static void fillMidpointEllipse(Graphics g, int cx, int cy, int radiusX, int radiusY, Color color) {
+        if (radiusX < 0 || radiusY < 0) return;
         g.setColor(color);
-        fillEllipseRaster(g, cx, cy, radiusX, radiusY);
+        if (radiusY == 0) {
+            paintSpan(g, cx - radiusX, cy, radiusX * 2 + 1);
+            return;
+        }
+        if (radiusX == 0) {
+            bresenhamLine(g, cx, cy - radiusY, cx, cy + radiusY);
+            return;
+        }
+
+        int[] halfWidths = new int[radiusY + 1];
+        for (int i = 0; i <= radiusY; i++) halfWidths[i] = -1;
+
+        long rx2 = (long) radiusX * radiusX;
+        long ry2 = (long) radiusY * radiusY;
+        long x = 0;
+        long y = radiusY;
+        long dx = 0;
+        long dy = 2 * rx2 * y;
+        double decision = ry2 - rx2 * radiusY + 0.25 * rx2;
+
+        while (dx < dy) {
+            halfWidths[(int) y] = Math.max(halfWidths[(int) y], (int) x);
+            x++;
+            dx += 2 * ry2;
+            if (decision < 0) {
+                decision += dx + ry2;
+            } else {
+                y--;
+                dy -= 2 * rx2;
+                decision += dx - dy + ry2;
+            }
+        }
+
+        decision = ry2 * Math.pow(x + 0.5, 2) + rx2 * Math.pow(y - 1, 2) - rx2 * ry2;
+        while (y >= 0) {
+            halfWidths[(int) y] = Math.max(halfWidths[(int) y], (int) x);
+            y--;
+            dy -= 2 * rx2;
+            if (decision > 0) {
+                decision += rx2 - dy;
+            } else {
+                x++;
+                dx += 2 * ry2;
+                decision += dx - dy + rx2;
+            }
+        }
+
+        for (int row = 0; row <= radiusY; row++) {
+            int halfWidth = halfWidths[row];
+            if (halfWidth < 0) continue;
+            paintSpan(g, cx - halfWidth, cy + row, halfWidth * 2 + 1);
+            if (row != 0) paintSpan(g, cx - halfWidth, cy - row, halfWidth * 2 + 1);
+        }
     }
 
     private static void fillEllipse(Graphics g, int x, int y, int width, int height) {
@@ -354,25 +432,25 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         }
     }
 
-    private static void fillShapeScanline(Graphics2D g, Shape shape) {
-        java.util.List<Point> points = new java.util.ArrayList<>();
-        PathIterator path = shape.getPathIterator(null, 0.75);
-        double[] coordinates = new double[6];
-        while (!path.isDone()) {
-            int type = path.currentSegment(coordinates);
-            if (type == PathIterator.SEG_MOVETO && !points.isEmpty()) {
-                fillPointPolygon(g, points);
-                points.clear();
-            }
-            if (type == PathIterator.SEG_MOVETO || type == PathIterator.SEG_LINETO) {
-                points.add(new Point((int) Math.round(coordinates[0]), (int) Math.round(coordinates[1])));
-            } else if (type == PathIterator.SEG_CLOSE && !points.isEmpty()) {
-                fillPointPolygon(g, points);
-                points.clear();
-            }
-            path.next();
+    private static Point roundedPoint(double x, double y) {
+        return new Point((int) Math.round(x), (int) Math.round(y));
+    }
+
+    private static void appendBezierPoints(java.util.List<Point> points,
+            double x1, double y1, double x2, double y2,
+            double x3, double y3, double x4, double y4, int steps) {
+        if (points.isEmpty()) points.add(roundedPoint(x1, y1));
+        for (int i = 1; i <= steps; i++) {
+            double t = (double) i / steps;
+            double u = 1.0 - t;
+            double b0 = u * u * u;
+            double b1 = 3.0 * t * u * u;
+            double b2 = 3.0 * t * t * u;
+            double b3 = t * t * t;
+            points.add(roundedPoint(
+                    b0 * x1 + b1 * x2 + b2 * x3 + b3 * x4,
+                    b0 * y1 + b1 * y2 + b2 * y3 + b3 * y4));
         }
-        if (!points.isEmpty()) fillPointPolygon(g, points);
     }
 
     private static void fillPointPolygon(Graphics g, java.util.List<Point> points) {
@@ -385,28 +463,12 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillPolygonScanline(g, xPoints, yPoints, points.size());
     }
 
-    private static void drawShapeLines(Graphics2D g, Shape shape) {
-        PathIterator path = shape.getPathIterator(null, 0.75);
-        double[] coordinates = new double[6];
-        int startX = 0;
-        int startY = 0;
-        int previousX = 0;
-        int previousY = 0;
-        while (!path.isDone()) {
-            int type = path.currentSegment(coordinates);
-            if (type == PathIterator.SEG_MOVETO) {
-                startX = previousX = (int) Math.round(coordinates[0]);
-                startY = previousY = (int) Math.round(coordinates[1]);
-            } else if (type == PathIterator.SEG_LINETO) {
-                int x = (int) Math.round(coordinates[0]);
-                int y = (int) Math.round(coordinates[1]);
-                drawRasterLine(g, previousX, previousY, x, y);
-                previousX = x;
-                previousY = y;
-            } else if (type == PathIterator.SEG_CLOSE) {
-                drawRasterLine(g, previousX, previousY, startX, startY);
-            }
-            path.next();
+    private static void drawPointPolygon(Graphics g, java.util.List<Point> points) {
+        if (points.size() < 2) return;
+        for (int i = 0; i < points.size(); i++) {
+            Point from = points.get(i);
+            Point to = points.get((i + 1) % points.size());
+            drawRasterLine(g, from.x, from.y, to.x, to.y);
         }
     }
 
@@ -438,21 +500,12 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
     private static void bezierCurve(Graphics g, double x1, double y1, double x2, double y2,
                               double x3, double y3, double x4, double y4, int steps) {
-        int prevX = (int) Math.round(x1);
-        int prevY = (int) Math.round(y1);
-        for (int i = 1; i <= steps; i++) {
-            double t = (double) i / steps;
-            double u = 1 - t;
-            double b0 = u * u * u;
-            double b1 = 3 * t * u * u;
-            double b2 = 3 * t * t * u;
-            double b3 = t * t * t;
-
-            int currX = (int) Math.round(b0 * x1 + b1 * x2 + b2 * x3 + b3 * x4);
-            int currY = (int) Math.round(b0 * y1 + b1 * y2 + b2 * y3 + b3 * y4);
-            bresenhamLine(g, prevX, prevY, currX, currY);
-            prevX = currX;
-            prevY = currY;
+        java.util.List<Point> points = new java.util.ArrayList<>();
+        appendBezierPoints(points, x1, y1, x2, y2, x3, y3, x4, y4, steps);
+        for (int i = 1; i < points.size(); i++) {
+            Point previous = points.get(i - 1);
+            Point current = points.get(i);
+            bresenhamLine(g, previous.x, previous.y, current.x, current.y);
         }
     }
 
@@ -556,27 +609,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
     private static void fillPolygonLinearGradient(Graphics g, Polygon p, int yStart, int yEnd, Color[] colors, float[] fractions) {
         fillPolygonLinearGradient(g, p.xpoints, p.ypoints, p.npoints, yStart, yEnd, colors, fractions);
-    }
-
-    private static void fillShapeLinearGradient(Graphics2D g, Shape shape, int yStart, int yEnd, Color[] colors, float[] fractions) {
-        java.util.List<Point> points = new java.util.ArrayList<>();
-        PathIterator path = shape.getPathIterator(null, 0.75);
-        double[] coordinates = new double[6];
-        while (!path.isDone()) {
-            int type = path.currentSegment(coordinates);
-            if (type == PathIterator.SEG_MOVETO && !points.isEmpty()) {
-                fillPointPolygonGradient(g, points, yStart, yEnd, colors, fractions);
-                points.clear();
-            }
-            if (type == PathIterator.SEG_MOVETO || type == PathIterator.SEG_LINETO) {
-                points.add(new Point((int) Math.round(coordinates[0]), (int) Math.round(coordinates[1])));
-            } else if (type == PathIterator.SEG_CLOSE && !points.isEmpty()) {
-                fillPointPolygonGradient(g, points, yStart, yEnd, colors, fractions);
-                points.clear();
-            }
-            path.next();
-        }
-        if (!points.isEmpty()) fillPointPolygonGradient(g, points, yStart, yEnd, colors, fractions);
     }
 
     private static void fillPointPolygonGradient(Graphics g, java.util.List<Point> points, int yStart, int yEnd, Color[] colors, float[] fractions) {
@@ -891,12 +923,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             double by = 620;
             double bh = 90 + (i % 3) * 35;
             double bend = -15 + (i * 4) + wind * 0.8;
-            Path2D.Double blade = new Path2D.Double();
-            blade.moveTo(bx - 3, by);
-            blade.curveTo(bx - 1, by - bh * 0.5, bx + bend * 0.6, by - bh * 0.8, bx + bend, by - bh);
-            blade.curveTo(bx + bend * 0.4, by - bh * 0.7, bx + 3, by - bh * 0.4, bx + 3, by);
-            blade.closePath();
-            fillShapeScanline(g2d, blade);
+            java.util.List<Point> blade = new java.util.ArrayList<>();
+            blade.add(roundedPoint(bx - 3, by));
+            appendBezierPoints(blade, bx - 3, by,
+                    bx - 1, by - bh * 0.5, bx + bend * 0.6, by - bh * 0.8, bx + bend, by - bh, 16);
+            appendBezierPoints(blade, bx + bend, by - bh,
+                    bx + bend * 0.4, by - bh * 0.7, bx + 3, by - bh * 0.4, bx + 3, by, 16);
+            fillPointPolygon(g2d, blade);
         }
 
         for (int i = 0; i < 8; i++) {
@@ -904,12 +937,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             double by = 620;
             double bh = 85 + ((8 - i) % 3) * 35;
             double bend = 15 - (i * 4) + wind * 0.8;
-            Path2D.Double blade = new Path2D.Double();
-            blade.moveTo(bx - 3, by);
-            blade.curveTo(bx - 1, by - bh * 0.5, bx + bend * 0.6, by - bh * 0.8, bx + bend, by - bh);
-            blade.curveTo(bx + bend * 0.4, by - bh * 0.7, bx + 3, by - bh * 0.4, bx + 3, by);
-            blade.closePath();
-            fillShapeScanline(g2d, blade);
+            java.util.List<Point> blade = new java.util.ArrayList<>();
+            blade.add(roundedPoint(bx - 3, by));
+            appendBezierPoints(blade, bx - 3, by,
+                    bx - 1, by - bh * 0.5, bx + bend * 0.6, by - bh * 0.8, bx + bend, by - bh, 16);
+            appendBezierPoints(blade, bx + bend, by - bh,
+                    bx + bend * 0.4, by - bh * 0.7, bx + 3, by - bh * 0.4, bx + 3, by, 16);
+            fillPointPolygon(g2d, blade);
         }
     }
 
@@ -925,27 +959,28 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         double botH = 280.0 * closure;
         double curveBow = 50.0 * (1.0 - closure * 0.3);
 
-        Path2D.Double topEyelid = new Path2D.Double();
-        topEyelid.moveTo(-20, -20);
-        topEyelid.lineTo(620, -20);
-        topEyelid.lineTo(620, topH - curveBow * 0.3);
-        topEyelid.curveTo(420, topH + curveBow, 180, topH + curveBow, -20, topH - curveBow * 0.3);
-        topEyelid.closePath();
+        java.util.List<Point> topEyelid = new java.util.ArrayList<>();
+        topEyelid.add(roundedPoint(-20, -20));
+        topEyelid.add(roundedPoint(620, -20));
+        topEyelid.add(roundedPoint(620, topH - curveBow * 0.3));
+        appendBezierPoints(topEyelid, 620, topH - curveBow * 0.3,
+                420, topH + curveBow, 180, topH + curveBow, -20, topH - curveBow * 0.3, 32);
 
-        Path2D.Double botEyelid = new Path2D.Double();
-        botEyelid.moveTo(-20, 620);
-        botEyelid.lineTo(620, 620);
-        botEyelid.lineTo(620, 620 - botH + curveBow * 0.3);
-        botEyelid.curveTo(420, 620 - botH - curveBow, 180, 620 - botH - curveBow, -20, 620 - botH + curveBow * 0.3);
-        botEyelid.closePath();
+        java.util.List<Point> botEyelid = new java.util.ArrayList<>();
+        botEyelid.add(roundedPoint(-20, 620));
+        botEyelid.add(roundedPoint(620, 620));
+        botEyelid.add(roundedPoint(620, 620 - botH + curveBow * 0.3));
+        appendBezierPoints(botEyelid, 620, 620 - botH + curveBow * 0.3,
+                420, 620 - botH - curveBow, 180, 620 - botH - curveBow,
+                -20, 620 - botH + curveBow * 0.3, 32);
 
         g2d.setColor(Color.BLACK);
-        fillShapeScanline(g2d, topEyelid);
-        fillShapeScanline(g2d, botEyelid);
+        fillPointPolygon(g2d, topEyelid);
+        fillPointPolygon(g2d, botEyelid);
 
         g2d.setColor(new Color(0, 0, 0, (int) (140 * closure)));
-        drawShapeLines(g2d, topEyelid);
-        drawShapeLines(g2d, botEyelid);
+        drawPointPolygon(g2d, topEyelid);
+        drawPointPolygon(g2d, botEyelid);
     }
 
     public void drawSkyBackground(Graphics2D g2d, double time) {
@@ -974,15 +1009,16 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         };
 
         for (int i = 0; i < bandWidths.length; i++) {
-            Path2D.Double band = new Path2D.Double();
+            java.util.List<Point> band = new java.util.ArrayList<>();
             int w = bandWidths[i];
-            band.moveTo(-600, -w / 2.0);
-            band.curveTo(-200, -w * 0.7, 100, -w * 0.3, 600, -w / 2.0);
-            band.curveTo(100, w * 0.3, -200, w * 0.7, -600, w / 2.0);
-            band.closePath();
+            band.add(roundedPoint(-600, -w / 2.0));
+            appendBezierPoints(band, -600, -w / 2.0,
+                    -200, -w * 0.7, 100, -w * 0.3, 600, -w / 2.0, 40);
+            appendBezierPoints(band, 600, -w / 2.0,
+                    100, w * 0.3, -200, w * 0.7, -600, w / 2.0, 40);
 
             g2d.setColor(bandColors[i]);
-            fillShapeScanline(g2d, band);
+            fillPointPolygon(g2d, band);
         }
 
         Random gRand = new Random(777);
@@ -1080,30 +1116,28 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     }
 
     public void drawDistantMountains(Graphics2D g2d) {
-        Path2D.Double mountains = new Path2D.Double();
-        mountains.moveTo(-60, 470);
-        mountains.curveTo(120, 425, 220, 455, 340, 430);
-        mountains.curveTo(430, 410, 520, 445, 680, 420);
-        mountains.lineTo(680, 600);
-        mountains.lineTo(-60, 600);
-        mountains.closePath();
+        java.util.List<Point> mountains = new java.util.ArrayList<>();
+        mountains.add(roundedPoint(-60, 470));
+        appendBezierPoints(mountains, -60, 470, 120, 425, 220, 455, 340, 430, 24);
+        appendBezierPoints(mountains, 340, 430, 430, 410, 520, 445, 680, 420, 24);
+        mountains.add(roundedPoint(680, 600));
+        mountains.add(roundedPoint(-60, 600));
 
         float[] dist = {0.0f, 1.0f};
         Color[] colors = {new Color(14, 32, 68, 220), new Color(7, 18, 42, 245)};
-        fillShapeLinearGradient(g2d, mountains, 410, 520, colors, dist);
+        fillPointPolygonGradient(g2d, mountains, 410, 520, colors, dist);
     }
 
     public void drawGrassyHill(Graphics2D g2d, double time) {
-        Path2D.Double hill = new Path2D.Double();
-        hill.moveTo(-60, 515);
-        hill.curveTo(150, 500, 380, 510, 680, 500);
-        hill.lineTo(680, 650);
-        hill.lineTo(-60, 650);
-        hill.closePath();
+        java.util.List<Point> hill = new java.util.ArrayList<>();
+        hill.add(roundedPoint(-60, 515));
+        appendBezierPoints(hill, -60, 515, 150, 500, 380, 510, 680, 500, 32);
+        hill.add(roundedPoint(680, 650));
+        hill.add(roundedPoint(-60, 650));
 
         float[] dist = {0.0f, 0.4f, 1.0f};
         Color[] colors = {new Color(6, 24, 34), new Color(4, 16, 22), new Color(2, 8, 12)};
-        fillShapeLinearGradient(g2d, hill, 450, 600, colors, dist);
+        fillPointPolygonGradient(g2d, hill, 450, 600, colors, dist);
     }
 
     public void drawForegroundFlowersAndGrass(Graphics2D g2d, double time) {
@@ -1118,15 +1152,16 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             double gh = grassHeight[i];
             double gb = grassBend[i] + wind * (gy / 600.0);
 
-            Path2D.Double blade = new Path2D.Double();
-            blade.moveTo(gx - 2.5, gy);
-            blade.curveTo(gx - 1, gy - gh * 0.5, gx + gb * 0.6, gy - gh * 0.8, gx + gb, gy - gh);
-            blade.curveTo(gx + gb * 0.4, gy - gh * 0.7, gx + 2, gy - gh * 0.4, gx + 2.5, gy);
-            blade.closePath();
+            java.util.List<Point> blade = new java.util.ArrayList<>();
+            blade.add(roundedPoint(gx - 2.5, gy));
+            appendBezierPoints(blade, gx - 2.5, gy,
+                    gx - 1, gy - gh * 0.5, gx + gb * 0.6, gy - gh * 0.8, gx + gb, gy - gh, 12);
+            appendBezierPoints(blade, gx + gb, gy - gh,
+                    gx + gb * 0.4, gy - gh * 0.7, gx + 2, gy - gh * 0.4, gx + 2.5, gy, 12);
 
             int alpha = (int) (180 + 75 * (gy - 490) / 110.0);
             g2d.setColor(new Color(8, 22, 28, Math.min(255, Math.max(0, alpha))));
-            fillShapeScanline(g2d, blade);
+            fillPointPolygon(g2d, blade);
         }
 
         for (int i = 0; i < NUM_FLOWERS; i++) {
@@ -1191,7 +1226,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int bodyT = 2;
 
         g2.setColor(new Color(0, 4, 10, 110));
-        fillShapeScanline(g2, new Ellipse2D.Double(headX - 30, 490, 390, 60));
+        fillEllipseRaster(g2, headX + 165, 520, 195, 30);
 
         g2.setColor(new Color(20, 20, 20));
 
@@ -2118,12 +2153,11 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             int alphaTop = (int) (55 * pulse);
             int alphaBottom = (int) (15 * pulse);
 
-            Path2D.Double beam = new Path2D.Double();
-            beam.moveTo(x1, y1);
-            beam.lineTo(x1 + w, y1);
-            beam.lineTo(x2 + w * 1.8, y2);
-            beam.lineTo(x2, y2);
-            beam.closePath();
+            java.util.List<Point> beam = new java.util.ArrayList<>();
+            beam.add(roundedPoint(x1, y1));
+            beam.add(roundedPoint(x1 + w, y1));
+            beam.add(roundedPoint(x2 + w * 1.8, y2));
+            beam.add(roundedPoint(x2, y2));
 
             float[] beamDist = {0.0f, 0.6f, 1.0f};
             Color[] beamColors = {
@@ -2131,7 +2165,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
                 new Color(245, 240, 160, (alphaTop + alphaBottom) / 2),
                 new Color(220, 245, 140, alphaBottom)
             };
-            fillShapeLinearGradient(g2, beam, y1, y2, beamColors, beamDist);
+            fillPointPolygonGradient(g2, beam, y1, y2, beamColors, beamDist);
         }
 
         Random sparkRand = new Random(404);
