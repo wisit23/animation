@@ -365,10 +365,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         plotPixel(g, cx - x, cy - y);
     }
 
-    private static void fillPolygonScanline(Graphics g, Polygon polygon) {
-        fillPolygonScanline(g, polygon.xpoints, polygon.ypoints, polygon.npoints);
-    }
-
     private static void fillPolygonScanline(Graphics g, int[] xPoints, int[] yPoints, int count) {
         if (count < 3) return;
         int minY = yPoints[0];
@@ -394,10 +390,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
                 paintSpan(g, intersections[i], y, intersections[i + 1] - intersections[i] + 1);
             }
         }
-    }
-
-    private static void drawPolygonLines(Graphics g, Polygon polygon) {
-        drawPolygonLines(g, polygon.xpoints, polygon.ypoints, polygon.npoints);
     }
 
     private static void drawPolygonLines(Graphics g, int[] xPoints, int[] yPoints, int count) {
@@ -619,10 +611,6 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
                 paintSpan(g, xLeft, y, xRight - xLeft + 1);
             }
         }
-    }
-
-    private static void fillPolygonLinearGradient(Graphics g, Polygon p, int yStart, int yEnd, Color[] colors, float[] fractions) {
-        fillPolygonLinearGradient(g, p.xpoints, p.ypoints, p.npoints, yStart, yEnd, colors, fractions);
     }
 
     private static void fillPointPolygonGradient(Graphics g, java.util.List<Point> points, int yStart, int yEnd, Color[] colors, float[] fractions) {
@@ -2661,12 +2649,12 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int[] mtnFarX = {-20, 60, 150, 240, 330, 420, 510, 620, 620, -20};
         int[] mtnFarY = {280, 210, 245, 190, 235, 180, 225, 200, 320, 320};
         bg.setColor(new Color(165, 88, 72, 190));
-        fillPolygonScanline(bg, new Polygon(mtnFarX, mtnFarY, mtnFarX.length));
+        fillPolygonScanline(bg, mtnFarX, mtnFarY, mtnFarX.length);
 
         int[] mtnMidX = {-20, 80, 180, 270, 380, 470, 580, 620, 620, -20};
         int[] mtnMidY = {295, 245, 275, 230, 265, 220, 255, 240, 330, 330};
         bg.setColor(new Color(132, 68, 45, 220));
-        fillPolygonScanline(bg, new Polygon(mtnMidX, mtnMidY, mtnMidX.length));
+        fillPolygonScanline(bg, mtnMidX, mtnMidY, mtnMidX.length);
 
         int[] roadX = {195, 415, 660, -60};
         int[] roadY = {270, 270, 600, 600};
@@ -2681,11 +2669,11 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int[] leftGrassX = {-20, 200, -20};
         int[] leftGrassY = {270, 270, 600};
         bg.setColor(new Color(88, 125, 45));
-        fillPolygonScanline(bg, new Polygon(leftGrassX, leftGrassY, 3));
+        fillPolygonScanline(bg, leftGrassX, leftGrassY, leftGrassX.length);
         int[] rightGrassX = {410, 620, 620};
         int[] rightGrassY = {270, 270, 600};
         bg.setColor(new Color(78, 115, 40));
-        fillPolygonScanline(bg, new Polygon(rightGrassX, rightGrassY, 3));
+        fillPolygonScanline(bg, rightGrassX, rightGrassY, rightGrassX.length);
 
         bg.setColor(new Color(145, 88, 42, 90));
         for (int r = 300; r < 590; r += 28) {
@@ -2732,7 +2720,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int[] hutRoofX = {42, 74, 106};
         int[] hutRoofY = {310, 285, 310};
         bg.setColor(new Color(82, 48, 28));
-        fillPolygonScanline(bg, new Polygon(hutRoofX, hutRoofY, 3));
+        fillPolygonScanline(bg, hutRoofX, hutRoofY, hutRoofX.length);
 
         int hx = 475, hy = 165, hw = 145, hh = 160;
         bg.setColor(new Color(225, 208, 182));
@@ -2752,7 +2740,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         int[] roofX = {440, 530, 620, 620, 450};
         int[] roofY = {175, 120, 155, 185, 192};
         bg.setColor(new Color(62, 70, 82));
-        fillPolygonScanline(bg, new Polygon(roofX, roofY, 5));
+        fillPolygonScanline(bg, roofX, roofY, roofX.length);
         bg.setColor(new Color(45, 52, 62));
         bresenhamLine(bg, 440, 175, 530, 120, 3);
         bresenhamLine(bg, 530, 120, 620, 155, 3);
@@ -2806,7 +2794,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         bg.setColor(new Color(55, 35, 20));
         int[] leftTrunkX = {-20, 30, 40, 5, -20};
         int[] leftTrunkY = {0, 0, 360, 375, 0};
-        fillPolygonScanline(bg, new Polygon(leftTrunkX, leftTrunkY, 5));
+        fillPolygonScanline(bg, leftTrunkX, leftTrunkY, leftTrunkX.length);
         bg.setColor(new Color(38, 22, 12));
         for (int ty = 40; ty < 360; ty += 28) {
             bresenhamLine(bg, -5, ty, 25, ty + 14, 1);
@@ -2814,16 +2802,16 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         bg.setColor(new Color(68, 42, 24));
         int[] lbrX = {25, 175, 170, 25};
         int[] lbrY = {115, 55, 75, 135};
-        fillPolygonScanline(bg, new Polygon(lbrX, lbrY, 4));
+        fillPolygonScanline(bg, lbrX, lbrY, lbrX.length);
 
         bg.setColor(new Color(52, 32, 18));
         int[] rightTrunkX = {565, 610, 620, 575, 565};
         int[] rightTrunkY = {0, 0, 340, 345, 0};
-        fillPolygonScanline(bg, new Polygon(rightTrunkX, rightTrunkY, 5));
+        fillPolygonScanline(bg, rightTrunkX, rightTrunkY, rightTrunkX.length);
         bg.setColor(new Color(65, 40, 22));
         int[] rbrX = {575, 410, 415, 575};
         int[] rbrY = {95, 45, 62, 115};
-        fillPolygonScanline(bg, new Polygon(rbrX, rbrY, 4));
+        fillPolygonScanline(bg, rbrX, rbrY, rbrX.length);
 
         int[][] leafPuffs = {
             {-40, -40, 140, 110, 0}, {-10, 10, 130, 95, 1}, {60, -25, 150, 115, 0},
@@ -3266,7 +3254,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             int[] rx = {rayPolys[i][0], rayPolys[i][1] + (int) pulse, rayPolys[i][2] + (int) pulse, rayPolys[i][3]};
             int[] ry = {0, 600, 600, 0};
             g2.setColor((i % 2 == 0) ? rayColor1 : rayColor2);
-            fillPolygonScanline(g2, new Polygon(rx, ry, 4));
+            fillPolygonScanline(g2, rx, ry, rx.length);
         }
 
         Random dustRand = new Random(7777);
@@ -3369,15 +3357,13 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
 
         int[] mtnX = {-20, 70, 160, 260, 350, 440, 530, 620, 620, -20};
         int[] mtnY = {420, 350, 410, 330, 390, 320, 380, 340, 480, 480};
-        Polygon distantMtn = new Polygon(mtnX, mtnY, mtnX.length);
         bg.setColor(new Color(90, 26, 60, 200));
-        fillPolygonScanline(bg, distantMtn);
+        fillPolygonScanline(bg, mtnX, mtnY, mtnX.length);
 
         int[] hillX = {-30, 40, 120, 200, 280, 350, 420, 500, 580, 630, 630, -30};
         int[] hillY = {440, 420, 400, 430, 450, 430, 410, 390, 430, 420, 500, 500};
-        Polygon midHill = new Polygon(hillX, hillY, hillX.length);
         bg.setColor(new Color(60, 18, 42, 230));
-        fillPolygonScanline(bg, midHill);
+        fillPolygonScanline(bg, hillX, hillY, hillX.length);
 
         float[] groundDist = {0f, 0.3f, 1f};
         Color[] groundColors = {new Color(42, 14, 25), new Color(30, 10, 18), new Color(18, 6, 12)};
@@ -3479,10 +3465,8 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             yPoints[steps * 2 + 1 - i] = (int) Math.round(Math.sin(a) * rIn);
         }
 
-        Polygon slashPoly = new Polygon(xPoints, yPoints, xPoints.length);
-
         g2.setColor(new Color(auraColor.getRed(), auraColor.getGreen(), auraColor.getBlue(), 90));
-        fillPolygonScanline(g2, slashPoly);
+        fillPolygonScanline(g2, xPoints, yPoints, xPoints.length);
 
         g2.setColor(new Color(auraColor.getRed(), auraColor.getGreen(), auraColor.getBlue(), 220));
         for (int i = 0; i < steps; i++) {
