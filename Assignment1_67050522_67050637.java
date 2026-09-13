@@ -54,6 +54,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
     private BufferedImage tvVigOverlay = null;
     private BufferedImage tvGlowBlueOverlay = null;
     private BufferedImage tvGlowOrangeOverlay = null;
+    private BufferedImage tvSceneBuffer = null;
 
     private static final int NUM_STARS = 260;
     private static final double[] starX = new double[NUM_STARS];
@@ -692,6 +693,39 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             }
         }
         return img;
+    }
+
+    private static void blendImageSourceOver(BufferedImage destination,
+            BufferedImage source, float opacity) {
+        int width = Math.min(destination.getWidth(), source.getWidth());
+        int height = Math.min(destination.getHeight(), source.getHeight());
+        int destinationStride = destination.getWidth();
+        int sourceStride = source.getWidth();
+        int[] destinationPixels = ((DataBufferInt) destination.getRaster().getDataBuffer()).getData();
+        int[] sourcePixels = ((DataBufferInt) source.getRaster().getDataBuffer()).getData();
+        int opacityByte = Math.max(0, Math.min(255, Math.round(opacity * 255f)));
+
+        for (int y = 0; y < height; y++) {
+            int destinationOffset = y * destinationStride;
+            int sourceOffset = y * sourceStride;
+            for (int x = 0; x < width; x++) {
+                int sourceArgb = sourcePixels[sourceOffset + x];
+                int sourceAlpha = (sourceArgb >>> 24) & 0xFF;
+                int alpha = (sourceAlpha * opacityByte + 127) / 255;
+                if (alpha == 0) continue;
+
+                int destinationRgb = destinationPixels[destinationOffset + x];
+                int inverseAlpha = 255 - alpha;
+                int red = ((((sourceArgb >>> 16) & 0xFF) * alpha)
+                        + (((destinationRgb >>> 16) & 0xFF) * inverseAlpha) + 127) / 255;
+                int green = ((((sourceArgb >>> 8) & 0xFF) * alpha)
+                        + (((destinationRgb >>> 8) & 0xFF) * inverseAlpha) + 127) / 255;
+                int blue = (((sourceArgb & 0xFF) * alpha)
+                        + ((destinationRgb & 0xFF) * inverseAlpha) + 127) / 255;
+                destinationPixels[destinationOffset + x] =
+                        0xFF000000 | (red << 16) | (green << 8) | blue;
+            }
+        }
     }
 
     // =========================================================================
@@ -5370,7 +5404,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         fillMidpointEllipse(g2, headX, headY + 8, 5, 3, new Color(245, 120, 130));
     }
 
-    private void drawTVLivingRoomLighting(Graphics2D g2, double st) {
+    private void drawTVLivingRoomLighting(BufferedImage scene, double st) {
         if (tvGlowBlueOverlay == null) {
             float[] tvDist = {0.0f, 0.45f, 0.85f, 1.0f};
             Color[] blueColors = {
@@ -5392,12 +5426,9 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
         float tvGlowPulse = (float) (0.6 + 0.4 * Math.sin(st * 12.0));
         boolean isBlue = ((int) (st * 6) % 2 == 0);
         float baseAlpha = isBlue ? (70f / 255f) : (65f / 255f);
-        float compAlpha = Math.max(0f, Math.min(1f, baseAlpha * tvGlowPulse));
-
-        Composite oldComp = g2.getComposite();
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, compAlpha));
-        g2.drawImage(isBlue ? tvGlowBlueOverlay : tvGlowOrangeOverlay, 0, 0, null);
-        g2.setComposite(oldComp);
+        float glowOpacity = Math.max(0f, Math.min(1f, baseAlpha * tvGlowPulse));
+        blendImageSourceOver(scene,
+                isBlue ? tvGlowBlueOverlay : tvGlowOrangeOverlay, glowOpacity);
 
         if (tvLampOverlay == null) {
             float[] lampDist = {0.0f, 0.50f, 1.0f};
@@ -5408,7 +5439,7 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             };
             tvLampOverlay = createRadialGradientImage(600, 600, 575, 120, 380f, lampColors, lampDist);
         }
-        g2.drawImage(tvLampOverlay, 0, 0, null);
+        blendImageSourceOver(scene, tvLampOverlay, 1f);
 
         if (tvVigOverlay == null) {
             float[] vigDist = {0.0f, 0.70f, 1.0f};
@@ -5419,24 +5450,28 @@ public class Assignment1_67050522_67050637 extends JPanel implements Runnable {
             };
             tvVigOverlay = createRadialGradientImage(600, 600, 300, 300, 440f, vigColors, vigDist);
         }
-        g2.drawImage(tvVigOverlay, 0, 0, null);
+        blendImageSourceOver(scene, tvVigOverlay, 1f);
     }
 
     private void drawTVScene(Graphics2D g2, double st) {
         if (livingRoomBackdrop == null) livingRoomBackdrop = buildLivingRoomBackdrop();
-        g2.drawImage(livingRoomBackdrop, 0, 0, null);
+        if (tvSceneBuffer == null) {
+            tvSceneBuffer = new BufferedImage(600, 600, BufferedImage.TYPE_INT_RGB);
+        }
 
-        drawTVScreenBattle(g2, 8, 140, 172, 195, st);
+        Graphics2D sceneGraphics = tvSceneBuffer.createGraphics();
+        sceneGraphics.drawImage(livingRoomBackdrop, 0, 0, null);
 
-        drawTVFriend4_SofaCheerBoy(g2, 380, 260, st);
+        drawTVScreenBattle(sceneGraphics, 8, 140, 172, 195, st);
+        drawTVFriend4_SofaCheerBoy(sceneGraphics, 380, 260, st);
+        drawTVFriend1_PopcornBoy(sceneGraphics, 190, 395, st);
+        drawTVFriend2_CenterHero(sceneGraphics, 295, 390, st);
+        drawTVFriend3_GreenPillowBoy(sceneGraphics, 410, 400, st);
+        drawCoffeeTableAndSnacks(sceneGraphics, 8, 465, st);
+        sceneGraphics.dispose();
 
-        drawTVFriend1_PopcornBoy(g2, 190, 395, st);
-        drawTVFriend2_CenterHero(g2, 295, 390, st);
-        drawTVFriend3_GreenPillowBoy(g2, 410, 400, st);
-
-        drawCoffeeTableAndSnacks(g2, 8, 465, st);
-
-        drawTVLivingRoomLighting(g2, st);
+        drawTVLivingRoomLighting(tvSceneBuffer, st);
+        g2.drawImage(tvSceneBuffer, 0, 0, null);
     }
 
     private double warpFlash(double t) {
